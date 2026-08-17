@@ -10,8 +10,8 @@
 [![Android API](https://img.shields.io/badge/API-26%2B%20(Android%208.0%2B)-brightgreen.svg?style=flat-square&logo=android)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-purple.svg?style=flat-square&logo=kotlin)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-blue.svg?style=flat-square&logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
-[![Release](https://img.shields.io/github/v/release/qydxyx/kegel-trainer?style=flat-square&color=orange)](https://github.com/qydxyx/kegel-trainer/releases)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/qydxyx/kegel-trainer/release.yml?style=flat-square&label=Build%20APK)](https://github.com/qydxyx/kegel-trainer/actions)
+[![Release](https://img.shields.io/github/v/release/qydxyx/MoveUrAss?style=flat-square&color=orange)](https://github.com/qydxyx/MoveUrAss/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/qydxyx/MoveUrAss/release.yml?style=flat-square&label=Build%20APK)](https://github.com/qydxyx/MoveUrAss/actions)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 </div>
@@ -101,8 +101,8 @@ app/
 
 1. **克隆仓库**：
    ```bash
-   git clone https://github.com/qydxyx/kegel-trainer.git
-   cd kegel-trainer
+   git clone https://github.com/qydxyx/MoveUrAss.git
+   cd MoveUrAss
    ```
 
 2. **配置 SDK 路径**：
@@ -130,15 +130,15 @@ app/
 ## 📦 下载与版本发布
 
 ### 下载 APK
-请前往 GitHub 仓库的 [Releases 页面](https://github.com/qydxyx/kegel-trainer/releases) 下载最新版本的 `MoveUrAss-v*.apk` 文件。下载完成后在 Android 系统的「安全与隐私」中允许安装未知来源应用即可。
+请前往 GitHub 仓库的 [Releases 页面](https://github.com/qydxyx/MoveUrAss/releases) 下载最新版本的 `MoveUrAss-v*.apk` 文件。下载完成后在 Android 系统的「安全与隐私」中允许安装未知来源应用即可。
 
 ### 自动化发布流程 (CI/CD)
 本项目已配置 GitHub Actions 自动化工作流。发布新版本时：
 1. 更新 `app/build.gradle.kts` 中的 `versionCode` 和 `versionName`；
 2. 提交并打上 Git Tag 后推送：
    ```bash
-   git tag v1.1.0
-   git push origin v1.1.0
+   git tag v1.1.1
+   git push origin v1.1.1
    ```
 3. GitHub Actions 将自动构建已签名的 Release APK 并自动生成 Release 发布日志。
 

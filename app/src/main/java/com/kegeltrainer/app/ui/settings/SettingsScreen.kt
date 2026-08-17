@@ -100,7 +100,11 @@ fun SettingsScreen(
             Text("会生成新的 28 天计划，已有履历保留", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(24.dp))
-        Text("腺动  1.0.0", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "腺动  ${activity.packageManager.getPackageInfo(activity.packageName, 0).versionName}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
         Text("训练数据仅保存在本机。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     }
 }

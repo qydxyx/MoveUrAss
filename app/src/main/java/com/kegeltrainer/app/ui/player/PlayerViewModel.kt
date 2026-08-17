@@ -133,7 +133,7 @@ class PlayerViewModel @Inject constructor(
                     announce(snap)
                     lastPhaseIndex = snap.phaseIndex
                     lastSpokenSec = -1
-                } else if (!snap.isPaused && !snap.isFinished && snap.remainingSec in 1..3 && snap.remainingSec != lastSpokenSec) {
+                } else if (shouldCountDown(snap) && snap.remainingSec != lastSpokenSec) {
                     if (_ui.value.voice) tts.speakCountdown(snap.remainingSec)
                     lastSpokenSec = snap.remainingSec
                 }
@@ -149,8 +149,15 @@ class PlayerViewModel @Inject constructor(
 
     private fun announce(snap: WorkoutEngine.Snapshot) {
         if (snap.isFinished) return
-        if (_ui.value.voice) tts.speakPhase(snap.phase.type)
+        if (_ui.value.voice) tts.speakPhase(snap.phase.type, snap.phase.durationMs)
         if (_ui.value.haptic && snap.phase.type != PhaseType.REST) haptic.onPhase(snap.phase.type)
+    }
+
+    /** Last-3-second count only on longer holds. 1s flick phases start at remainingSec==1. */
+    private fun shouldCountDown(snap: WorkoutEngine.Snapshot): Boolean {
+        if (snap.isPaused || snap.isFinished) return false
+        if (snap.remainingSec !in 1..3) return false
+        return snap.phase.durationMs > 3_000L
     }
 
     private fun finish() {

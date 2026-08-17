@@ -112,15 +112,21 @@ fun Goal.displayName(): String = when (this) {
     Goal.GENERAL -> "综合盆底力量"
 }
 
-fun PhaseType.spokenCue(): String = when (this) {
+fun PhaseType.spokenCue(durationMs: Long = Long.MAX_VALUE): String = when (this) {
+    PhaseType.PREPARE -> "准备"
+    PhaseType.CONTRACT -> if (durationMs <= 1_500L) "收" else "收缩"
+    PhaseType.HOLD -> "保持"
+    PhaseType.RELAX -> if (durationMs <= 1_500L) "放" else "放松"
+    PhaseType.REST -> "休息"
+}
+
+fun PhaseType.displayLabel(): String = when (this) {
     PhaseType.PREPARE -> "准备"
     PhaseType.CONTRACT -> "收缩"
     PhaseType.HOLD -> "保持"
     PhaseType.RELAX -> "放松"
     PhaseType.REST -> "休息"
 }
-
-fun PhaseType.displayLabel(): String = spokenCue()
 
 fun AgeRange.displayName(): String = when (this) {
     AgeRange.UNDER_30 -> "30 岁以下"

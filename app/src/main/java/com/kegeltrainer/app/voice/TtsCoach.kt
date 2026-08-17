@@ -30,8 +30,8 @@ class TtsCoach @Inject constructor(
         main.post { bindEngine() }
     }
 
-    fun speakPhase(type: PhaseType) {
-        speak(type.spokenCue())
+    fun speakPhase(type: PhaseType, durationMs: Long = Long.MAX_VALUE) {
+        speak(type.spokenCue(durationMs))
     }
 
     fun speakCountdown(sec: Int) {

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./ic_launcher-playstore.png" alt="腺动 Kegel Trainer Icon" width="128" height="128" style="border-radius: 28px;" />
+<img src="./ic_launcher-playstore.png" alt="腺动 Kegel Trainer Icon" width="128" />
 
 # 腺动（Kegel Trainer）
 

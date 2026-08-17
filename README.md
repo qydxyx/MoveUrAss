@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="./ic_launcher-playstore.png" alt="腺动 Kegel Trainer Icon" width="128" />
+<img src="./ic_launcher-playstore.png" alt="腺动 MoveUrAss Icon" width="128" />
 
-# 腺动（Kegel Trainer）
+# 腺动（MoveUrAss）
 
 **面向男性的科学盆底肌训练 Android 应用**  
 *专注核心力量 · 节奏律动引导 · 极致隐私保护 · 纯本地运行*
@@ -20,7 +20,7 @@
 
 ## 📖 项目简介
 
-**腺动（Kegel Trainer）** 是一款专为男性设计的盆底肌（PC肌）科学训练与健康管理应用。
+**腺动（MoveUrAss）** 是一款专为男性设计的盆底肌（PC肌）科学训练与健康管理应用。
 
 旨在帮助男性用户改善盆底肌群张力、增强核心控制力与前列腺机能健康。应用构建了对标专业级健康训练软件的核心闭环：从**入职能力测评**、**个性化 28 天进阶计划**、**多维课程库**、**沉浸式语音/震动播放器**，到**可视化履历与成就勋章**。
 
@@ -130,7 +130,7 @@ app/
 ## 📦 下载与版本发布
 
 ### 下载 APK
-请前往 GitHub 仓库的 [Releases 页面](https://github.com/qydxyx/kegel-trainer/releases) 下载最新版本的 `kegel-trainer-v*.apk` 文件。下载完成后在 Android 系统的「安全与隐私」中允许安装未知来源应用即可。
+请前往 GitHub 仓库的 [Releases 页面](https://github.com/qydxyx/kegel-trainer/releases) 下载最新版本的 `MoveUrAss-v*.apk` 文件。下载完成后在 Android 系统的「安全与隐私」中允许安装未知来源应用即可。
 
 ### 自动化发布流程 (CI/CD)
 本项目已配置 GitHub Actions 自动化工作流。发布新版本时：

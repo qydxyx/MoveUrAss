@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KegelTrainer"
+rootProject.name = "MoveUrAss"
 include(":app")

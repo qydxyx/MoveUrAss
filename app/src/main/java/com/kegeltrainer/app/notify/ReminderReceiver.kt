@@ -53,7 +53,7 @@ class ReminderReceiver : BroadcastReceiver() {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("腺动")
+            .setContentTitle(context.getString(R.string.app_name))
             .setContentText("该做今日盆底训练了")
             .setContentIntent(launch)
             .setAutoCancel(true)

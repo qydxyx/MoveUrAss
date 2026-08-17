@@ -12,3 +12,7 @@ app/build
 *.apk
 *.aab
 .kotlin
+
+# Skills
+.agents/
+skills-lock.json

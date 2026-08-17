@@ -1,20 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#0B1220"
-        android:pathData="M0,0h108v108h-108z" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M54,54m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0"
-        android:strokeWidth="6"
-        android:strokeColor="#3DCDC0" />
+
+    <!-- Outer Resonance Pulse Arc -->
     <path
         android:fillColor="#00000000"
-        android:pathData="M54,54m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
-        android:strokeWidth="4"
-        android:strokeColor="#E8A04A" />
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M33.5,43 A23.5,23.5 0 0,1 74.5,43">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="33"
+                android:startY="43"
+                android:endX="75"
+                android:endY="43"
+                android:type="linear"
+                android:startColor="#4038BDF8"
+                android:endColor="#402DD4BF" />
+        </aapt:attr>
+    </path>
+
+    <!-- Mid Resonance Pulse Arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M37.5,46.5 A18.5,18.5 0 0,1 70.5,46.5">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="37"
+                android:startY="46"
+                android:endX="71"
+                android:endY="46"
+                android:type="linear"
+                android:startColor="#8038BDF8"
+                android:endColor="#802DD4BF" />
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Active Pulse Ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M41.5,50.5 A13.5,13.5 0 0,1 66.5,50.5">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="41"
+                android:startY="50"
+                android:endX="67"
+                android:endY="50"
+                android:type="linear"
+                android:startColor="#CC38BDF8"
+                android:endColor="#CC34D399" />
+        </aapt:attr>
+    </path>
+
+    <!-- Pelvic Floor Muscle Support Sling / Arch (盆底肌托举主弧) -->
+    <!-- Left Wing (Cyan to Teal) -->
+    <path
+        android:pathData="M27.5,37 C26.8,50 36,75.5 54,78.5 C40.5,75 32,59 33.5,40.5 C34.2,33 30,30 27.5,37 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="27"
+                android:startY="35"
+                android:endX="54"
+                android:endY="78"
+                android:type="linear"
+                android:startColor="#06B6D4"
+                android:endColor="#10B981" />
+        </aapt:attr>
+    </path>
+
+    <!-- Right Wing (Teal to Emerald) -->
+    <path
+        android:pathData="M80.5,37 C81.2,50 72,75.5 54,78.5 C67.5,75 76,59 74.5,40.5 C73.8,33 78,30 80.5,37 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="81"
+                android:startY="35"
+                android:endX="54"
+                android:endY="78"
+                android:type="linear"
+                android:startColor="#10B981"
+                android:endColor="#34D399" />
+        </aapt:attr>
+    </path>
+
+    <!-- Bottom Uplifting Cradle Arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:pathData="M31.5,44 C34,68 44,77 54,77 C64,77 74,68 76.5,44">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="31"
+                android:startY="44"
+                android:endX="77"
+                android:endY="44"
+                android:type="linear"
+                android:startColor="#0EA5E9"
+                android:endColor="#10B981" />
+        </aapt:attr>
+    </path>
+
+    <!-- Radiant Vitality Core Glow -->
+    <path
+        android:pathData="M54,53m-11,0a11,11 0 1,1 22,0a11,11 0 1,1 -22,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="53"
+                android:gradientRadius="11"
+                android:type="radial"
+                android:startColor="#60F59E0B"
+                android:endColor="#00F59E0B" />
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Golden Core Ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeWidth="2"
+        android:strokeColor="#F59E0B"
+        android:pathData="M54,53m-6,0a6,6 0 1,1 12,0a6,6 0 1,1 -12,0" />
+
+    <!-- Central Radiant 4-Point Vitality Spark -->
+    <path
+        android:pathData="M54,43 C54,49.5 47.5,53 44,53 C47.5,53 54,56.5 54,63 C54,56.5 60.5,53 64,53 C60.5,53 54,49.5 54,43 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="53"
+                android:gradientRadius="10"
+                android:type="radial"
+                android:startColor="#FFFBEB"
+                android:endColor="#F59E0B" />
+        </aapt:attr>
+    </path>
+
+    <!-- Spark center highlight dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,53m-1.5,0a1.5,1.5 0 1,1 3,0a1.5,1.5 0 1,1 -3,0" />
 </vector>

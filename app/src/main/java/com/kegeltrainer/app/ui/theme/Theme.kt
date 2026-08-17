@@ -1,28 +1,31 @@
 package com.kegeltrainer.app.ui.theme
 
+import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-
-private val Scheme = darkColorScheme(
-    primary = Teal,
-    onPrimary = Night,
-    secondary = Amber,
-    onSecondary = Night,
-    background = Night,
-    onBackground = Ink,
-    surface = NightElevated,
-    onSurface = Ink,
-    surfaceVariant = NightCard,
-    onSurfaceVariant = InkMuted,
-    outline = Line,
-    error = Rose,
-)
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 @Composable
-fun KegelTheme(content: @Composable () -> Unit) {
+fun KegelTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val scheme = if (darkTheme) OledDarkScheme else LightScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
     MaterialTheme(
-        colorScheme = Scheme,
+        colorScheme = scheme,
         typography = Typography,
         content = content,
     )

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.kegeltrainer.app.ui.theme.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -19,6 +20,7 @@ data class AppSettings(
     val hapticEnabled: Boolean = true,
     val stealthEnabled: Boolean = false,
     val reminderHours: Set<Int> = setOf(21),
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 )
 
 @Singleton
@@ -43,6 +45,8 @@ class UserPrefs @Inject constructor(
         it[REMINDERS] = hours.sorted().joinToString(",")
     }
 
+    suspend fun setThemeMode(mode: ThemeMode) = edit { it[THEME] = mode.name }
+
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         store.edit(block)
     }
@@ -57,6 +61,8 @@ class UserPrefs @Inject constructor(
             ?.mapNotNull { it.toIntOrNull() }
             ?.toSet()
             ?: setOf(21),
+        themeMode = this[THEME]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
+            ?: ThemeMode.SYSTEM,
     )
 
     private companion object {
@@ -65,5 +71,6 @@ class UserPrefs @Inject constructor(
         val HAPTIC = booleanPreferencesKey("haptic")
         val STEALTH = booleanPreferencesKey("stealth")
         val REMINDERS = stringPreferencesKey("reminders")
+        val THEME = stringPreferencesKey("theme_mode")
     }
 }

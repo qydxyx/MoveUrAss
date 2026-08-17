@@ -27,9 +27,7 @@ import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.SelectChip
 import com.kegeltrainer.app.ui.components.PrimaryButton
 import com.kegeltrainer.app.ui.components.ScreenColumn
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Teal
+
 
 @Composable
 fun LibraryScreen(
@@ -42,7 +40,7 @@ fun LibraryScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("课程库", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("课程库", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(12.dp))
         FilterRow(
             options = Level.entries.map { it to it.displayName() },
@@ -58,11 +56,11 @@ fun LibraryScreen(
         Spacer(Modifier.height(16.dp))
         ui.items.forEach { workout ->
             AppCard(onClick = { onOpen(workout.id) }, modifier = Modifier.padding(bottom = 10.dp)) {
-                Text(workout.title, color = Ink, style = MaterialTheme.typography.titleLarge)
+                Text(workout.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "${workout.type.displayName()} · ${workout.level.displayName()} · ${formatDuration(workout.durationSec)}",
-                    color = InkMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -98,18 +96,18 @@ fun WorkoutDetailScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text(workout.type.displayName(), color = Teal, style = MaterialTheme.typography.labelLarge)
+        Text(workout.type.displayName(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(6.dp))
-        Text(workout.title, color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text(workout.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(8.dp))
         Text(
             "${workout.level.displayName()} · ${formatDuration(workout.durationSec)} · ${workout.contractionCount} 次收缩",
-            color = InkMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
-        Text(workout.summary, color = Ink, style = MaterialTheme.typography.bodyLarge)
+        Text(workout.summary, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(20.dp))
-        Text("阶段预览", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("阶段预览", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         workout.blocks.forEachIndexed { index, block ->
             val names = block.phases.joinToString(" → ") {
@@ -121,19 +119,19 @@ fun WorkoutDetailScreen(
                     PhaseType.PREPARE -> "准备"
                 }
             }
-            Text("组 ${index + 1}  ×${block.repeat}    $names", color = Ink, style = MaterialTheme.typography.bodyMedium)
+            Text("组 ${index + 1}  ×${block.repeat}    $names", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(6.dp))
         }
         Spacer(Modifier.height(16.dp))
-        Text("注意", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("注意", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         workout.coachTips.forEach {
-            Text("· $it", color = Ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
+            Text("· $it", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
         }
         Spacer(Modifier.height(24.dp))
         PrimaryButton("开始训练", onClick = { onStart(workout.id) })
         Spacer(Modifier.height(8.dp))
         androidx.compose.material3.TextButton(onClick = onBack) {
-            Text("返回", color = InkMuted)
+            Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.kegeltrainer.app.data.prefs.AppSettings
 import com.kegeltrainer.app.data.repo.TrainerRepository
 import com.kegeltrainer.app.notify.ReminderScheduler
+import com.kegeltrainer.app.ui.theme.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +38,7 @@ class SettingsViewModel @Inject constructor(
     fun setVoice(value: Boolean) = viewModelScope.launch { repo.setVoice(value) }
     fun setHaptic(value: Boolean) = viewModelScope.launch { repo.setHaptic(value) }
     fun setStealth(value: Boolean) = viewModelScope.launch { repo.setStealth(value) }
+    fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { repo.setThemeMode(mode) }
 
     fun toggleReminder(hour: Int, activity: Activity) {
         viewModelScope.launch {

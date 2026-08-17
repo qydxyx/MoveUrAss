@@ -19,8 +19,7 @@ import com.kegeltrainer.app.domain.knowledge.KnowledgeArticles
 import com.kegeltrainer.app.domain.model.KnowledgeArticle
 import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.ScreenColumn
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
+
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -31,18 +30,18 @@ fun KnowledgeScreen(onOpen: (String) -> Unit, onBack: () -> Unit) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("知识库", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("知识库", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(8.dp))
-        Text("帮助你练对，而不是练猛。", color = InkMuted)
+        Text("帮助你练对，而不是练猛。", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
         KnowledgeArticles.all.forEach { article ->
             AppCard(onClick = { onOpen(article.id) }, modifier = Modifier.padding(bottom = 10.dp)) {
-                Text(article.title, color = Ink, style = MaterialTheme.typography.titleLarge)
+                Text(article.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(4.dp))
-                Text(article.subtitle, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(article.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
         }
-        TextButton(onClick = onBack) { Text("返回", color = InkMuted) }
+        TextButton(onClick = onBack) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -64,12 +63,12 @@ fun ArticleScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text(article.title, color = Ink, style = MaterialTheme.typography.headlineMedium)
+        Text(article.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
-        Text(article.subtitle, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+        Text(article.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(16.dp))
-        Text(article.body, color = Ink, style = MaterialTheme.typography.bodyLarge)
+        Text(article.body, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(20.dp))
-        TextButton(onClick = onBack) { Text("返回", color = InkMuted) }
+        TextButton(onClick = onBack) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }

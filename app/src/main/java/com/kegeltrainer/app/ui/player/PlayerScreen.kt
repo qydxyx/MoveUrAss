@@ -54,12 +54,7 @@ import com.kegeltrainer.app.domain.model.displayLabel
 import com.kegeltrainer.app.domain.model.formatDuration
 import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.PrimaryButton
-import com.kegeltrainer.app.ui.theme.Amber
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Line
-import com.kegeltrainer.app.ui.theme.Night
-import com.kegeltrainer.app.ui.theme.Teal
+
 
 @Composable
 fun PlayerScreen(
@@ -87,12 +82,13 @@ fun PlayerScreen(
         CompletePane(ui = ui, onDone = { vm.leaveFinished(onExit) })
         return
     }
+    val colors = MaterialTheme.colorScheme
     val phase = ui.snapshot.phase
     val targetColor = when (phase.type) {
-        PhaseType.CONTRACT, PhaseType.HOLD -> Amber
-        PhaseType.RELAX -> Teal
-        PhaseType.PREPARE -> Ink
-        PhaseType.REST -> InkMuted
+        PhaseType.CONTRACT, PhaseType.HOLD -> colors.secondary
+        PhaseType.RELAX -> colors.primary
+        PhaseType.PREPARE -> colors.onSurface
+        PhaseType.REST -> colors.onSurfaceVariant
     }
     val color by animateColorAsState(targetColor, tween(400), label = "phaseColor")
     val targetScale = when (phase.type) {
@@ -107,7 +103,7 @@ fun PlayerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Night)
+            .background(colors.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .graphicsLayer { alpha = dim },
@@ -123,8 +119,8 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = vm::requestExit) { Text("结束", color = InkMuted) }
-                Text(ui.workout.title, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = vm::requestExit) { Text("结束", color = colors.onSurfaceVariant) }
+                Text(ui.workout.title, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Row {
                     IconToggle(Icons.Outlined.GraphicEq, ui.voice, vm::toggleVoice)
                     IconToggle(Icons.Outlined.Vibration, ui.haptic, vm::toggleHaptic)
@@ -148,18 +144,18 @@ fun PlayerScreen(
                     Text(phase.type.displayLabel(), color = color, style = MaterialTheme.typography.headlineMedium)
                     Text(
                         "${ui.snapshot.remainingSec}",
-                        color = Ink,
+                        color = colors.onSurface,
                         style = MaterialTheme.typography.displayLarge,
                     )
                     if (phase.intensity > 1) {
-                        Text("强度 ${phase.intensity}", color = InkMuted)
+                        Text("强度 ${phase.intensity}", color = colors.onSurfaceVariant)
                     }
                 }
             }
             Spacer(Modifier.height(24.dp))
             Text(
                 "收缩  ${ui.snapshot.contractionIndex} / ${ui.snapshot.contractionTotal}",
-                color = InkMuted,
+                color = colors.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
             LinearProgressIndicator(
@@ -169,7 +165,7 @@ fun PlayerScreen(
                     .height(6.dp)
                     .clip(CircleShape),
                 color = color,
-                trackColor = Line,
+                trackColor = colors.outline,
             )
             Spacer(Modifier.weight(1f))
             IconButton(
@@ -209,28 +205,29 @@ private fun CompletePane(ui: PlayerUi, onDone: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Night)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("完成", color = Teal, style = MaterialTheme.typography.headlineLarge)
+        val colors = MaterialTheme.colorScheme
+        Text("完成", color = colors.primary, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(8.dp))
-        Text(ui.workout.title, color = Ink, style = MaterialTheme.typography.titleLarge)
+        Text(ui.workout.title, color = colors.onSurface, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(20.dp))
         AppCard {
-            Text("用时 ${formatDuration((ui.snapshot.elapsedMs / 1000).toInt())}", color = Ink)
+            Text("用时 ${formatDuration((ui.snapshot.elapsedMs / 1000).toInt())}", color = colors.onSurface)
             Spacer(Modifier.height(6.dp))
-            Text("收缩 ${ui.snapshot.contractionTotal} 次", color = Ink)
+            Text("收缩 ${ui.snapshot.contractionTotal} 次", color = colors.onSurface)
             Spacer(Modifier.height(6.dp))
-            Text("已写入今日履历", color = InkMuted)
+            Text("已写入今日履历", color = colors.onSurfaceVariant)
         }
         Spacer(Modifier.height(16.dp))
         AppCard {
-            Text("课后提示", color = Teal, style = MaterialTheme.typography.labelLarge)
+            Text("课后提示", color = colors.primary, style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
-            Text(ui.tip, color = Ink, style = MaterialTheme.typography.bodyLarge)
+            Text(ui.tip, color = colors.onSurface, style = MaterialTheme.typography.bodyLarge)
         }
         Spacer(Modifier.height(28.dp))
         PrimaryButton("回到今日", onClick = onDone)
@@ -244,6 +241,10 @@ private fun IconToggle(
     onClick: () -> Unit,
 ) {
     IconButton(onClick = onClick) {
-        Icon(icon, contentDescription = null, tint = if (on) Teal else InkMuted)
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

@@ -16,6 +16,7 @@ import com.kegeltrainer.app.domain.model.PlannedDay
 import com.kegeltrainer.app.domain.model.SessionRecord
 import com.kegeltrainer.app.domain.model.UserProfile
 import com.kegeltrainer.app.domain.plan.PlanGenerator
+import com.kegeltrainer.app.ui.theme.ThemeMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -113,6 +114,7 @@ class TrainerRepository @Inject constructor(
     suspend fun setHaptic(enabled: Boolean) = prefs.setHaptic(enabled)
     suspend fun setStealth(enabled: Boolean) = prefs.setStealth(enabled)
     suspend fun setReminderHours(hours: Set<Int>) = prefs.setReminderHours(hours)
+    suspend fun setThemeMode(mode: ThemeMode) = prefs.setThemeMode(mode)
 
     fun workoutTitle(id: String): String = WorkoutCatalog.find(id)?.title ?: id
 }

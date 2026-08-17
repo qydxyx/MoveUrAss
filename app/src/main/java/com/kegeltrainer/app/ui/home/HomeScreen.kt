@@ -19,10 +19,7 @@ import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.PrimaryButton
 import com.kegeltrainer.app.ui.components.ScreenColumn
 import com.kegeltrainer.app.ui.components.WeekDots
-import com.kegeltrainer.app.ui.theme.Amber
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Teal
+
 
 @Composable
 fun HomeScreen(
@@ -36,18 +33,18 @@ fun HomeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("今日", color = InkMuted, style = MaterialTheme.typography.titleMedium)
+        Text("今日", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
-        Text("腺动", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("腺动", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(16.dp))
         AppCard {
             Text(
                 if (ui.streak > 0) "已连续 ${ui.streak} 天" else "从今天开始连续",
-                color = Amber,
+                color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleLarge,
             )
             Spacer(Modifier.height(6.dp))
-            Text("每天几分钟，比一次练崩更有用。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            Text("每天几分钟，比一次练崩更有用。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
         Spacer(Modifier.height(16.dp))
         val workout = ui.workout
@@ -55,19 +52,19 @@ fun HomeScreen(
             AppCard(onClick = { onDetail(workout.id) }) {
                 Text(
                     if (ui.planDone) "今日主课已完成" else "第 ${ui.dayIndex + 1} 天 · 主课",
-                    color = Teal,
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Spacer(Modifier.height(8.dp))
-                Text(workout.title, color = Ink, style = MaterialTheme.typography.headlineMedium)
+                Text(workout.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "${workout.type.displayName()} · ${workout.level.displayName()} · ${formatDuration(workout.durationSec)}",
-                    color = InkMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(10.dp))
-                Text(workout.summary, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(workout.summary, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
                 PrimaryButton(
                     text = if (ui.planDone) "再练一次" else "开始今日课",
@@ -76,19 +73,19 @@ fun HomeScreen(
             }
         } else {
             AppCard {
-                Text("还没有生成计划", color = Ink, style = MaterialTheme.typography.titleLarge)
-                Text("请先完成入门问卷。", color = InkMuted)
+                Text("还没有生成计划", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
+                Text("请先完成入门问卷。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Spacer(Modifier.height(16.dp))
-        Text("本周", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("本周", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         WeekDots(ui.weekFlags)
         Spacer(Modifier.height(20.dp))
         AppCard {
-            Text("今日提示", color = Teal, style = MaterialTheme.typography.labelLarge)
+            Text("今日提示", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
-            Text(ui.tip, color = Ink, style = MaterialTheme.typography.bodyLarge)
+            Text(ui.tip, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

@@ -24,13 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.kegeltrainer.app.ui.theme.Amber
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Line
-import com.kegeltrainer.app.ui.theme.Night
-import com.kegeltrainer.app.ui.theme.NightCard
-import com.kegeltrainer.app.ui.theme.Teal
 
 @Composable
 fun ScreenColumn(
@@ -52,6 +45,7 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val colors = MaterialTheme.colorScheme
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -60,10 +54,10 @@ fun PrimaryButton(
             .height(52.dp),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Teal,
-            contentColor = Night,
-            disabledContainerColor = Line,
-            disabledContentColor = InkMuted,
+            containerColor = colors.primary,
+            contentColor = colors.onPrimary,
+            disabledContainerColor = colors.outline,
+            disabledContentColor = colors.onSurfaceVariant,
         ),
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -80,7 +74,7 @@ fun AppCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(NightCard)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(18.dp),
         content = content,
@@ -94,8 +88,9 @@ fun SelectChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val border = if (selected) Teal else Line
-    val bg = if (selected) Teal.copy(alpha = 0.16f) else Color.Transparent
+    val colors = MaterialTheme.colorScheme
+    val border = if (selected) colors.primary else colors.outline
+    val bg = if (selected) colors.primary.copy(alpha = 0.16f) else Color.Transparent
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
@@ -107,7 +102,7 @@ fun SelectChip(
     ) {
         Text(
             label,
-            color = if (selected) Teal else Ink,
+            color = if (selected) colors.primary else colors.onSurface,
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -115,15 +110,16 @@ fun SelectChip(
 
 @Composable
 fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(NightCard)
+            .background(colors.surfaceVariant)
             .padding(14.dp),
     ) {
-        Text(value, color = Ink, style = MaterialTheme.typography.headlineMedium)
+        Text(value, color = colors.onSurface, style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
-        Text(label, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -131,7 +127,7 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
 fun SectionLabel(text: String) {
     Text(
         text,
-        color = InkMuted,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier.padding(bottom = 8.dp),
     )
@@ -139,6 +135,7 @@ fun SectionLabel(text: String) {
 
 @Composable
 fun WeekDots(completed: List<Boolean>, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -150,10 +147,14 @@ fun WeekDots(completed: List<Boolean>, modifier: Modifier = Modifier) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(if (on) Amber else Line)
+                        .background(if (on) colors.secondary else colors.outline)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
-                    Text(label, color = if (on) Night else InkMuted, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        label,
+                        color = if (on) colors.onSecondary else colors.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                 }
             }
         }

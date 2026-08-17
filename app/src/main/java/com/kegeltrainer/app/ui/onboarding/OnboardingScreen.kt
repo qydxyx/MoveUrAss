@@ -38,10 +38,7 @@ import com.kegeltrainer.app.ui.components.SelectChip
 import com.kegeltrainer.app.ui.components.PrimaryButton
 import com.kegeltrainer.app.ui.components.ScreenColumn
 import com.kegeltrainer.app.ui.settings.DisclaimerBody
-import com.kegeltrainer.app.ui.theme.Amber
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Teal
+
 import kotlinx.coroutines.delay
 
 @Composable
@@ -66,7 +63,7 @@ fun OnboardingScreen(
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
-            color = Teal,
+            color = MaterialTheme.colorScheme.primary,
         )
         ScreenColumn(
             modifier = Modifier
@@ -102,7 +99,7 @@ fun OnboardingScreen(
                 TextButton(
                     onClick = vm::skipBaseline,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) { Text("跳过", color = InkMuted) }
+                ) { Text("跳过", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             } else if (ui.step == OnboardStep.BASELINE && ui.baselineRunning) {
                 PrimaryButton("我松开了", onClick = vm::finishBaseline)
             } else {
@@ -116,7 +113,7 @@ fun OnboardingScreen(
                 TextButton(
                     onClick = vm::goBack,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) { Text("返回", color = InkMuted) }
+                ) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
     }
@@ -125,35 +122,35 @@ fun OnboardingScreen(
 @Composable
 private fun WelcomeStep() {
     Spacer(Modifier.height(32.dp))
-    Text("腺动", color = Teal, style = MaterialTheme.typography.headlineLarge)
+    Text("腺动", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.headlineLarge)
     Spacer(Modifier.height(8.dp))
-    Text("男性盆底肌训练", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("男性盆底肌训练", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(16.dp))
     Text(
         "用几分钟，按节奏学会正确收缩。数据只留在这台手机上，无需账号。",
-        color = InkMuted,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge,
     )
 }
 
 @Composable
 private fun DisclaimerStep(agreed: Boolean, onAgree: (Boolean) -> Unit) {
-    Text("使用前请了解", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("使用前请了解", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(12.dp))
     DisclaimerBody()
     Spacer(Modifier.height(8.dp))
     androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = agreed, onCheckedChange = onAgree)
-        Text("我已阅读并了解以上说明", color = Ink, style = MaterialTheme.typography.bodyMedium)
+        Text("我已阅读并了解以上说明", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AgeStep(selected: AgeRange?, onChoose: (AgeRange) -> Unit) {
-    Text("你的年龄段", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("你的年龄段", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
-    Text("用于安排起始强度，不会上传。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+    Text("用于安排起始强度，不会上传。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     Spacer(Modifier.height(16.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AgeRange.entries.forEach {
@@ -165,7 +162,7 @@ private fun AgeStep(selected: AgeRange?, onChoose: (AgeRange) -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExperienceStep(selected: Experience?, onChoose: (Experience) -> Unit) {
-    Text("盆底训练经验", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("盆底训练经验", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(16.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Experience.entries.forEach {
@@ -177,9 +174,9 @@ private fun ExperienceStep(selected: Experience?, onChoose: (Experience) -> Unit
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun GoalsStep(selected: Set<Goal>, onToggle: (Goal) -> Unit) {
-    Text("更想改善什么", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("更想改善什么", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
-    Text("可多选，今日主课会据此偏重。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+    Text("可多选，今日主课会据此偏重。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     Spacer(Modifier.height(16.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Goal.entries.forEach {
@@ -191,7 +188,7 @@ private fun GoalsStep(selected: Set<Goal>, onToggle: (Goal) -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BudgetStep(selected: DailyBudget?, onChoose: (DailyBudget) -> Unit) {
-    Text("每天能拿出多久", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("每天能拿出多久", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(16.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         DailyBudget.entries.forEach {
@@ -208,49 +205,49 @@ private fun GuideStep(page: Int) {
         "入门体位" to "先仰卧屈膝，骨盆最放松。坐着、站着都可以练，但请先在最容易找准的体位上把感觉练稳。",
     )
     val (title, body) = pages[page]
-    Text("找对盆底肌 ${page + 1}/3", color = Teal, style = MaterialTheme.typography.titleMedium)
+    Text("找对盆底肌 ${page + 1}/3", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(12.dp))
-    Text(title, color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(12.dp))
-    Text(body, color = InkMuted, style = MaterialTheme.typography.bodyLarge)
+    Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
 }
 
 @Composable
 private fun BaselineStep(ui: OnboardUi) {
-    Text("可选：最长保持测试", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("可选：最长保持测试", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
     Text(
         "听到开始后收紧盆底并按住。松开即结束。上限 15 秒，用来微调计划，不是比赛。",
-        color = InkMuted,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge,
     )
     Spacer(Modifier.height(24.dp))
     Text(
         if (ui.baselineRunning) "${ui.baselineElapsedSec} 秒" else "准备好再开始",
-        color = if (ui.baselineRunning) Amber else Ink,
+        color = if (ui.baselineRunning) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.displayLarge,
     )
     if (ui.baselineRunning) {
         Spacer(Modifier.height(8.dp))
-        Text("保持收缩，不要憋气", color = InkMuted)
+        Text("保持收缩，不要憋气", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun PreviewStep(ui: OnboardUi) {
-    Text("你的 28 天计划已就绪", color = Ink, style = MaterialTheme.typography.headlineMedium)
+    Text("你的 28 天计划已就绪", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
-    Text("今日主课按此表推送。课程库随时可以加练。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+    Text("今日主课按此表推送。课程库随时可以加练。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     Spacer(Modifier.height(16.dp))
     ui.preview.chunked(7).forEachIndexed { week, days ->
         AppCard(modifier = Modifier.padding(bottom = 10.dp)) {
-            Text("第 ${week + 1} 周", color = Teal, style = MaterialTheme.typography.titleMedium)
+            Text("第 ${week + 1} 周", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             days.forEach { day ->
                 val workout = WorkoutCatalog.find(day.workoutId)
                 Text(
                     "第 ${day.dayIndex + 1} 天  ${workout?.title ?: ""}  ${workout?.let { formatDuration(it.durationSec) } ?: ""}",
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

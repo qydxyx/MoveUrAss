@@ -27,9 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.SelectChip
 import com.kegeltrainer.app.ui.components.ScreenColumn
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Teal
+import com.kegeltrainer.app.ui.theme.ThemeMode
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,7 +45,23 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("我的", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("我的", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(16.dp))
+        Text("外观", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.height(8.dp))
+        AppCard {
+            Text("浅色与深色可跟随系统，也可单独指定。深色为 OLED 纯黑。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(12.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ThemeMode.entries.forEach { mode ->
+                    SelectChip(
+                        label = mode.displayName(),
+                        selected = settings.themeMode == mode,
+                        onClick = { vm.setThemeMode(mode) },
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(16.dp))
         AppCard {
             SettingRow("语音引导", settings.voiceEnabled) { vm.setVoice(it) }
@@ -55,10 +69,10 @@ fun SettingsScreen(
             SettingRow("隐蔽模式", settings.stealthEnabled) { vm.setStealth(it) }
         }
         Spacer(Modifier.height(16.dp))
-        Text("每日提醒", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("每日提醒", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         AppCard {
-            Text("通知只写「该做今日盆底训练了」，不含更细的健康描述。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            Text("通知只写「该做今日盆底训练了」，不含更细的健康描述。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(8 to "08:00", 12 to "12:00", 21 to "21:00").forEach { (hour, label) ->
@@ -72,22 +86,22 @@ fun SettingsScreen(
         }
         Spacer(Modifier.height(16.dp))
         AppCard(onClick = onKnowledge) {
-            Text("知识库", color = Ink, style = MaterialTheme.typography.titleLarge)
-            Text("找肌、常见错误、何时停练", color = InkMuted)
+            Text("知识库", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
+            Text("找肌、常见错误、何时停练", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(10.dp))
         AppCard(onClick = onDisclaimer) {
-            Text("健康声明", color = Ink, style = MaterialTheme.typography.titleLarge)
-            Text("可随时再读", color = InkMuted)
+            Text("健康声明", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
+            Text("可随时再读", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(10.dp))
         AppCard(onClick = onRedoOnboarding) {
-            Text("重新做问卷", color = Ink, style = MaterialTheme.typography.titleLarge)
-            Text("会生成新的 28 天计划，已有履历保留", color = InkMuted)
+            Text("重新做问卷", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
+            Text("会生成新的 28 天计划，已有履历保留", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(24.dp))
-        Text("腺动  1.0.0", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
-        Text("训练数据仅保存在本机。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+        Text("腺动  1.0.0", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Text("训练数据仅保存在本机。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -97,11 +111,11 @@ private fun SettingRow(label: String, checked: Boolean, onChange: (Boolean) -> U
         modifier = Modifier.padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Ink, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
         Switch(
             checked = checked,
             onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(checkedTrackColor = Teal),
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
         )
     }
 }
@@ -113,11 +127,11 @@ fun DisclaimerScreen(onBack: () -> Unit) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("健康声明", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("健康声明", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(16.dp))
         DisclaimerBody()
         Spacer(Modifier.height(16.dp))
-        TextButton(onClick = onBack) { Text("返回", color = InkMuted) }
+        TextButton(onClick = onBack) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -126,22 +140,22 @@ fun DisclaimerBody() {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             "腺动是盆底肌训练的节奏引导工具，不是医疗器械，也不能诊断或治疗任何疾病。",
-            color = Ink,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyLarge,
         )
         Text(
             "凯格尔运动可能有助于膀胱控制与盆底力量，部分人会感到舒适度改善。它不能替代医师对前列腺炎、增生、术后康复或其他泌尿问题的诊疗。",
-            color = InkMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge,
         )
         Text(
             "出现发热、血尿、急性尿潴留、会阴剧痛、术后未经医生允许等情况，请停止自行训练并就医。",
-            color = InkMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge,
         )
         Text(
             "所有训练记录只保存在这台设备上。",
-            color = InkMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge,
         )
     }

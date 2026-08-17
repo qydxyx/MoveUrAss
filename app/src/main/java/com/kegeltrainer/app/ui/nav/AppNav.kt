@@ -37,10 +37,7 @@ import com.kegeltrainer.app.ui.progress.ProgressScreen
 import com.kegeltrainer.app.ui.settings.DisclaimerScreen
 import com.kegeltrainer.app.ui.settings.SettingsScreen
 import com.kegeltrainer.app.ui.settings.SettingsViewModel
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.NightElevated
-import com.kegeltrainer.app.ui.theme.Teal
+import androidx.compose.material3.MaterialTheme
 
 object Routes {
     const val ONBOARDING = "onboarding"
@@ -141,9 +138,10 @@ private fun MainTabs(
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         bottomBar = {
-            NavigationBar(containerColor = NightElevated) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 tabs.forEach { tab ->
                     val selected = backStack?.destination?.hierarchy?.any { it.route == tab.route } == true
+                    val colors = MaterialTheme.colorScheme
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
@@ -156,11 +154,11 @@ private fun MainTabs(
                         icon = { Icon(tab.icon, contentDescription = tab.label) },
                         label = { Text(tab.label) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Teal,
-                            selectedTextColor = Teal,
-                            unselectedIconColor = InkMuted,
-                            unselectedTextColor = InkMuted,
-                            indicatorColor = Teal.copy(alpha = 0.16f),
+                            selectedIconColor = colors.primary,
+                            selectedTextColor = colors.primary,
+                            unselectedIconColor = colors.onSurfaceVariant,
+                            unselectedTextColor = colors.onSurfaceVariant,
+                            indicatorColor = colors.primary.copy(alpha = 0.16f),
                         ),
                     )
                 }

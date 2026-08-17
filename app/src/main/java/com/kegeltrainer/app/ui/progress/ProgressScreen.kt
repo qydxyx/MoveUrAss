@@ -28,12 +28,7 @@ import com.kegeltrainer.app.domain.model.formatDuration
 import com.kegeltrainer.app.ui.components.AppCard
 import com.kegeltrainer.app.ui.components.ScreenColumn
 import com.kegeltrainer.app.ui.components.StatTile
-import com.kegeltrainer.app.ui.theme.Amber
-import com.kegeltrainer.app.ui.theme.Ink
-import com.kegeltrainer.app.ui.theme.InkMuted
-import com.kegeltrainer.app.ui.theme.Line
-import com.kegeltrainer.app.ui.theme.NightCard
-import com.kegeltrainer.app.ui.theme.Teal
+
 import java.time.YearMonth
 
 @Composable
@@ -44,7 +39,7 @@ fun ProgressScreen(vm: ProgressViewModel = hiltViewModel()) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("履历", color = Ink, style = MaterialTheme.typography.headlineLarge)
+        Text("履历", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             StatTile("完成次数", "${ui.totalCount}", Modifier.weight(1f))
@@ -56,30 +51,30 @@ fun ProgressScreen(vm: ProgressViewModel = hiltViewModel()) {
             StatTile("最长连续", "${ui.longest} 天", Modifier.weight(1f))
         }
         Spacer(Modifier.height(20.dp))
-        Text("${ui.month.year} 年 ${ui.month.monthValue} 月", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("${ui.month.year} 年 ${ui.month.monthValue} 月", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         MonthGrid(ui.month, ui.daysOn)
         Spacer(Modifier.height(20.dp))
-        Text("成就", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("成就", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         ui.achievements.forEach { (def, on) ->
             AppCard(modifier = Modifier.padding(bottom = 8.dp)) {
-                Text(def.title, color = if (on) Amber else InkMuted, style = MaterialTheme.typography.titleMedium)
-                Text(if (on) def.detail else "未解锁 · ${def.detail}", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(def.title, color = if (on) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleMedium)
+                Text(if (on) def.detail else "未解锁 · ${def.detail}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
         }
         Spacer(Modifier.height(12.dp))
-        Text("最近记录", color = InkMuted, style = MaterialTheme.typography.labelLarge)
+        Text("最近记录", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         if (ui.recent.isEmpty()) {
-            Text("还没有训练记录。", color = InkMuted)
+            Text("还没有训练记录。", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             ui.recent.forEach { session ->
                 AppCard(modifier = Modifier.padding(bottom = 8.dp)) {
-                    Text(vm.titleOf(session.workoutId), color = Ink, style = MaterialTheme.typography.titleMedium)
+                    Text(vm.titleOf(session.workoutId), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                     Text(
                         "${session.dayLabel()} · ${formatDuration((session.durationMs / 1000).toInt())} · ${if (session.completed) "完成" else "未完成"}",
-                        color = InkMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -100,7 +95,7 @@ private fun MonthGrid(month: YearMonth, daysOn: Set<Int>) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf("一", "二", "三", "四", "五", "六", "日").forEach {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(it, color = InkMuted, style = MaterialTheme.typography.labelLarge)
+                    Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -113,13 +108,13 @@ private fun MonthGrid(month: YearMonth, daysOn: Set<Int>) {
                             .weight(1f)
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (on) Teal.copy(alpha = 0.35f) else NightCard),
+                            .background(if (on) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (day != null) {
                             Text(
                                 "$day",
-                                color = if (on) Teal else InkMuted,
+                                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }

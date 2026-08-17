@@ -4,6 +4,17 @@
 
 不是医疗器械，不宣称治疗任何疾病。
 
+## 下载安装
+
+到 [Releases](https://github.com/qydxyx/kegel-trainer/releases) 下载 `kegel-trainer-v*.apk`。手机需允许安装未知来源应用。
+
+发新版本：改 `versionName` / `versionCode` 后打 tag 并推送，GitHub Actions 会自动打包并挂到 Release。
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
 ## 运行
 
 需要 JDK 17 与 Android SDK（compileSdk 35）。

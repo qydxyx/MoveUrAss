@@ -21,6 +21,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Sideload / GitHub Releases: installable without a Play Store keystore.
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

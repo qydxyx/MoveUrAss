@@ -1,0 +1,2 @@
+## Copy to local.properties. Use Android Studio's SDK, not a Homebrew cmdline-tools tree.
+sdk.dir=/Users/qydxyx/Library/Android/sdk

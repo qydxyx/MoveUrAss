@@ -20,7 +20,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace || {
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee gradle-test.log || {
             python3 .github/scripts/print_test_errors.py
             exit 1
           }

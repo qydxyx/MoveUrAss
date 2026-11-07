@@ -24,6 +24,15 @@ jobs:
             exit 1
           }
 
+      - name: Upload test failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-unit-test-failure-logs
+          path: |
+            gradle-test.log
+            app/build/reports/
+
       - name: Run Android Lint
         run: ./gradlew :app:lintDebug --no-daemon
 

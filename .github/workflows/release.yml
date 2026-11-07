@@ -25,6 +25,15 @@ jobs:
             exit 1
           }
 
+      - name: Upload test failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-failure-logs
+          path: |
+            gradle-test.log
+            app/build/reports/
+
       - name: Prepare Signing Keystore
         id: keystore
         env:

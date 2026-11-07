@@ -22,10 +22,20 @@ jobs:
         run: |
           ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace || {
             echo "::error::Unit tests failed"
-            find app/build/reports/tests -type f | while read -r file; do
-              echo "=== $file ==="
-              cat "$file"
-            done
+            python3 -c "
+import glob, xml.etree.ElementTree as ET
+for f in glob.glob('app/build/test-results/**/*.xml', recursive=True):
+    tree = ET.parse(f)
+    for tc in tree.findall('.//testcase'):
+        fail = tc.find('failure')
+        if fail is not None:
+            c = tc.attrib.get('classname')
+            n = tc.attrib.get('name')
+            msg = fail.attrib.get('message') or ''
+            txt = (fail.text or '').strip()
+            first_lines = '\n'.join(txt.splitlines()[:10])
+            print(f'::error title=TEST FAILED: {c}.{n}::{msg}\n{first_lines}')
+"
             exit 1
           }
 

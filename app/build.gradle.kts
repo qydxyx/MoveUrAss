@@ -21,12 +21,21 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_FILE")
-            if (!keystorePath.isNullOrBlank() && file(keystorePath).exists()) {
-                storeFile = file(keystorePath)
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "android"
-                keyAlias = System.getenv("KEY_ALIAS") ?: "androiddebugkey"
-                keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+            val customKeystorePath = System.getenv("KEYSTORE_FILE")
+            if (!customKeystorePath.isNullOrBlank() && file(customKeystorePath).exists()) {
+                storeFile = file(customKeystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "moveurass"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "moveurass"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "moveurass"
+            } else {
+                // Fallback to permanent bundled release keystore
+                val defaultKeystore = file("keystore/release.jks")
+                if (defaultKeystore.exists()) {
+                    storeFile = defaultKeystore
+                    storePassword = "moveurass"
+                    keyAlias = "moveurass"
+                    keyPassword = "moveurass"
+                }
             }
         }
     }

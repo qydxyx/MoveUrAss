@@ -7,10 +7,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.kegeltrainer.app.MainActivity
 import com.kegeltrainer.app.R
 import com.kegeltrainer.app.domain.model.displayLabel
@@ -21,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,15 +37,24 @@ class WorkoutForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
     private var observerJob: Job? = null
+    private var lastNotificationKey: String? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         acquireWakeLock()
+        // Immediately start foreground to satisfy Android 8+ & 14+ 5-second requirement
+        val initialNotification = buildNotification(
+            title = getString(R.string.app_name),
+            content = "训练准备中…",
+            isPaused = false,
+        )
+        startServiceForeground(initialNotification)
         observeSession()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        acquireWakeLock()
         when (intent?.action) {
             ACTION_PAUSE_RESUME -> sessionManager.pauseOrResume()
             ACTION_STOP -> {
@@ -65,28 +77,64 @@ class WorkoutForegroundService : Service() {
         releaseWakeLock()
     }
 
+    private fun startServiceForeground(notification: Notification) {
+        val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+        } else {
+            0
+        }
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, fgsType)
+    }
+
+    private fun updateNotification(notification: Notification) {
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID, notification)
+    }
+
     private fun observeSession() {
         observerJob = scope.launch {
             sessionManager.state.collectLatest { state ->
                 val snap = state.snapshot
                 val workout = state.workout
-                if (snap == null || workout == null || state.isFinished) {
-                    if (state.isFinished && workout != null) {
+
+                if (state.isFinished) {
+                    if (workout != null) {
                         showCompletionNotification(workout.title, state.settings.stealthEnabled)
                     }
-                    stopSelf()
+                    // Keep wakeLock alive briefly for 3s so the completion chime and TTS voice finish playing in screen-off
+                    scope.launch {
+                        delay(3000)
+                        stopSelf()
+                    }
                     return@collectLatest
                 }
+
+                if (snap == null || workout == null) {
+                    // Session starting up or idle, do not stopSelf!
+                    return@collectLatest
+                }
+
+                val title = getString(R.string.app_name)
+                val content = if (state.settings.stealthEnabled) {
+                    "训练进行中 · 剩余 ${snap.remainingSec}s"
+                } else {
+                    "${workout.title} · ${snap.phase.type.displayLabel()} ${snap.remainingSec}s"
+                }
+
+                // Debounce notifications: only update when visible content actually changes (approx once per sec)
+                // Avoids 20 IPC calls per sec flooding Binder & stalling MainLooper
+                val notificationKey = "${snap.phase.type}_${snap.remainingSec}_${snap.isPaused}_${state.settings.stealthEnabled}"
+                if (notificationKey == lastNotificationKey) {
+                    return@collectLatest
+                }
+                lastNotificationKey = notificationKey
+
                 val notification = buildNotification(
-                    title = getString(R.string.app_name),
-                    content = if (state.settings.stealthEnabled) {
-                        "训练进行中 · 剩余 ${snap.remainingSec}s"
-                    } else {
-                        "${workout.title} · ${snap.phase.type.displayLabel()} ${snap.remainingSec}s"
-                    },
+                    title = title,
+                    content = content,
                     isPaused = snap.isPaused,
                 )
-                startForeground(NOTIFICATION_ID, notification)
+                updateNotification(notification)
             }
         }
     }
@@ -95,7 +143,9 @@ class WorkoutForegroundService : Service() {
         val openAppIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
@@ -120,6 +170,8 @@ class WorkoutForegroundService : Service() {
             .setContentIntent(openAppIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_WORKOUT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
                 if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause,
                 if (isPaused) "继续" else "暂停",
@@ -163,12 +215,13 @@ class WorkoutForegroundService : Service() {
 
     private fun acquireWakeLock() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
+        if (wakeLock?.isHeld == true) return
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "MoveUrAss::WorkoutWakeLock",
         ).apply {
             setReferenceCounted(false)
-            acquire(30 * 60 * 1000L) // 30 minutes safety timeout
+            acquire(45 * 60 * 1000L) // 45 minutes safety timeout
         }
     }
 

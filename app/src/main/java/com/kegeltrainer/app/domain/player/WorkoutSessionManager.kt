@@ -65,7 +65,9 @@ class WorkoutSessionManager @Inject constructor(
         if (current.workout?.id == workout.id && !current.isFinished && engine != null) {
             return
         }
-        stopSession()
+        ticker?.cancel()
+        ticker = null
+        tts.stop()
 
         val newEngine = WorkoutEngine(workout) { SystemClock.elapsedRealtime() }
         engine = newEngine
@@ -73,19 +75,17 @@ class WorkoutSessionManager @Inject constructor(
         lastPhaseIndex = -1
         lastSpokenSec = -1
 
-        scope.launch {
-            val initialSettings = repo.settings.first()
-            _state.value = SessionState(
-                workout = workout,
-                isPlan = isPlan,
-                snapshot = newEngine.snapshot(),
-                settings = initialSettings,
-                isFinished = false,
-                recorded = false,
-                tip = "",
-            )
-            startTicker()
-        }
+        val currentSettings = _state.value.settings
+        _state.value = SessionState(
+            workout = workout,
+            isPlan = isPlan,
+            snapshot = newEngine.snapshot(),
+            settings = currentSettings,
+            isFinished = false,
+            recorded = false,
+            tip = "",
+        )
+        startTicker()
     }
 
     fun pauseOrResume() {

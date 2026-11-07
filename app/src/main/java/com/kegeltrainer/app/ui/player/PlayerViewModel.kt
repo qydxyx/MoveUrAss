@@ -12,6 +12,7 @@ import com.kegeltrainer.app.domain.model.PhaseType
 import com.kegeltrainer.app.domain.model.SessionRecord
 import com.kegeltrainer.app.domain.model.Workout
 import com.kegeltrainer.app.domain.player.WorkoutEngine
+import com.kegeltrainer.app.domain.player.WorkoutSessionManager
 import com.kegeltrainer.app.haptic.HapticCoach
 import com.kegeltrainer.app.voice.TtsCoach
 import dagger.hilt.android.lifecycle.HiltViewModel

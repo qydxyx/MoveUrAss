@@ -41,17 +41,21 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
-            echo "has_keystore=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_keystore=false" >> "$GITHUB_OUTPUT"
+            echo "Generating fallback CI signing keystore..."
+            keytool -genkey -v -keystore /tmp/release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass release123 -keypass release123 -dname "CN=MoveUrAss,O=Release,C=CN"
+            echo "CI_KEYSTORE_PASSWORD=release123" >> "$GITHUB_ENV"
+            echo "CI_KEY_ALIAS=release" >> "$GITHUB_ENV"
+            echo "CI_KEY_PASSWORD=release123" >> "$GITHUB_ENV"
           fi
+          echo "CI_KEYSTORE_FILE=/tmp/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build release APK
         env:
           KEYSTORE_FILE: /tmp/release.keystore
-          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD || env.CI_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || env.CI_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || env.CI_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --no-daemon
 
       - name: Name APK from tag

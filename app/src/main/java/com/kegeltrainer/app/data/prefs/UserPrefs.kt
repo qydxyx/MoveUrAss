@@ -64,19 +64,28 @@ class UserPrefs @Inject constructor(
     }
 
     private fun Preferences.toSettings(): AppSettings {
-        val minutesString = this[REMINDERS_MINUTES]
-        val reminders: Set<Int> = if (!minutesString.isNullOrBlank()) {
-            minutesString.split(",")
-                .mapNotNull { it.toIntOrNull() }
-                .toSet()
-        } else {
+        val reminders: Set<Int> = if (contains(REMINDERS_MINUTES)) {
+            val minutesString = this[REMINDERS_MINUTES].orEmpty()
+            if (minutesString.isBlank()) {
+                emptySet()
+            } else {
+                minutesString.split(",")
+                    .mapNotNull { it.toIntOrNull() }
+                    .toSet()
+            }
+        } else if (contains(REMINDERS)) {
             // Backward compatibility with legacy REMINDERS ("8,12,21" -> hour values)
-            this[REMINDERS]
-                ?.split(",")
-                ?.mapNotNull { it.toIntOrNull() }
-                ?.map { it * 60 }
-                ?.toSet()
-                ?: setOf(21 * 60)
+            val legacy = this[REMINDERS].orEmpty()
+            if (legacy.isBlank()) {
+                emptySet()
+            } else {
+                legacy.split(",")
+                    .mapNotNull { it.toIntOrNull() }
+                    .map { it * 60 }
+                    .toSet()
+            }
+        } else {
+            setOf(21 * 60)
         }
 
         return AppSettings(

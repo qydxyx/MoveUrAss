@@ -84,4 +84,16 @@ class BackupCodecTest {
         assertTrue(decoded.sessions.isEmpty())
         assertTrue(decoded.settings.voiceEnabled)
     }
+
+    @Test
+    fun handlesEmptyReminderMinutesCorrectly() {
+        val payload = BackupPayload(
+            settings = BackupSettings(
+                reminderMinutes = emptyList(),
+            ),
+        )
+        val encoded = json.encodeToString(payload)
+        val decoded = json.decodeFromString<BackupPayload>(encoded)
+        assertTrue(decoded.settings.reminderMinutes.isEmpty())
+    }
 }

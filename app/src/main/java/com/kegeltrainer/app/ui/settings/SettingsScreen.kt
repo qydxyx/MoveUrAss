@@ -123,7 +123,12 @@ fun SettingsScreen(
             Text("每日提醒", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
             AppCard {
-                Text("通知只写「该做今日盆底训练了」，不含任何敏感健康描述。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    if (settings.reminderMinutes.isEmpty()) "已关闭所有提醒。点击下方可随时添加每日训练提醒。"
+                    else "通知只写「该做今日盆底训练了」，不含任何敏感健康描述。",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Spacer(Modifier.height(12.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     settings.reminderMinutes.sorted().forEach { totalMinutes ->

@@ -95,11 +95,18 @@ fun OnboardingScreen(
             if (ui.step == OnboardStep.PREVIEW) {
                 PrimaryButton("开始使用", onClick = { vm.finish(onFinished) })
             } else if (ui.step == OnboardStep.BASELINE && !ui.baselineRunning) {
-                PrimaryButton("开始 15 秒测试", onClick = vm::startBaseline)
+                PrimaryButton(
+                    text = if (ui.baselineHoldSec != null) "重新测试 15 秒" else "开始 15 秒测试",
+                    onClick = vm::startBaseline,
+                )
+                if (ui.baselineHoldSec != null) {
+                    Spacer(Modifier.height(8.dp))
+                    PrimaryButton(text = "继续", onClick = vm::goNext)
+                }
                 TextButton(
                     onClick = vm::skipBaseline,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) { Text("跳过", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                ) { Text(if (ui.baselineHoldSec != null) "清除并跳过" else "跳过", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             } else if (ui.step == OnboardStep.BASELINE && ui.baselineRunning) {
                 PrimaryButton("我松开了", onClick = vm::finishBaseline)
             } else {
@@ -217,20 +224,25 @@ private fun BaselineStep(ui: OnboardUi) {
     Text("可选：最长保持测试", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
     Spacer(Modifier.height(8.dp))
     Text(
-        "听到开始后收紧盆底并按住。松开即结束。上限 15 秒，用来微调计划，不是比赛。",
+        "点击开始后收紧盆底并保持。松开即结束。上限 15 秒，用来微调计划，不是比赛。",
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge,
     )
     Spacer(Modifier.height(24.dp))
     Text(
-        if (ui.baselineRunning) "${ui.baselineElapsedSec} 秒" else "准备好再开始",
+        when {
+            ui.baselineRunning -> "${ui.baselineElapsedSec} 秒"
+            ui.baselineHoldSec != null -> "已测：${ui.baselineHoldSec} 秒"
+            else -> "准备好再开始"
+        },
         color = if (ui.baselineRunning) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.displayLarge,
     )
-    if (ui.baselineRunning) {
-        Spacer(Modifier.height(8.dp))
-        Text("保持收缩，不要憋气", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    Spacer(Modifier.height(8.dp))
+    Text(
+        if (ui.baselineRunning) "保持收缩，不要憋气" else if (ui.baselineHoldSec != null) "可继续下一步，或重新测试" else "躺姿屈膝更容易找准肌肉",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

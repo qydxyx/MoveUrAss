@@ -35,25 +35,35 @@ data class Workout(
     val blocks: List<WorkoutBlock>,
     val coachTips: List<String>,
 ) {
-    val durationMs: Long
-        get() = blocks.sumOf { block ->
+    val durationMs: Long by lazy {
+        blocks.sumOf { block ->
             block.phases.sumOf { it.durationMs } * block.repeat
         }
+    }
 
-    val durationSec: Int get() = (durationMs / 1000L).toInt()
+    val durationSec: Int by lazy { (durationMs / 1000L).toInt() }
 
-    val flattenedPhases: List<Phase>
-        get() = buildList {
+    val flattenedPhases: List<Phase> by lazy {
+        buildList {
             add(Phase(PhaseType.PREPARE, 3_000L))
             blocks.forEach { block ->
                 repeat(block.repeat) { addAll(block.phases) }
             }
         }
+    }
 
-    val contractionCount: Int
-        get() = flattenedPhases.count {
-            it.type == PhaseType.CONTRACT || it.type == PhaseType.HOLD
+    val contractionCount: Int by lazy {
+        var count = 0
+        var inEffort = false
+        flattenedPhases.forEach { phase ->
+            val isEffort = phase.type == PhaseType.CONTRACT || phase.type == PhaseType.HOLD
+            if (isEffort && !inEffort) {
+                count++
+            }
+            inEffort = isEffort
         }
+        count
+    }
 }
 
 data class UserProfile(

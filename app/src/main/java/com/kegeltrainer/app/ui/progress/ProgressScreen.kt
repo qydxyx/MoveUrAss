@@ -51,7 +51,32 @@ fun ProgressScreen(vm: ProgressViewModel = hiltViewModel()) {
             StatTile("最长连续", "${ui.longest} 天", Modifier.weight(1f))
         }
         Spacer(Modifier.height(20.dp))
-        Text("${ui.month.year} 年 ${ui.month.monthValue} 月", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${ui.month.year} 年 ${ui.month.monthValue} 月",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row {
+                androidx.compose.material3.IconButton(onClick = vm::previousMonth) {
+                    Text("‹", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                }
+                androidx.compose.material3.IconButton(
+                    onClick = vm::nextMonth,
+                    enabled = ui.month.isBefore(java.time.YearMonth.now()),
+                ) {
+                    Text(
+                        "›",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = if (ui.month.isBefore(java.time.YearMonth.now())) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
         MonthGrid(ui.month, ui.daysOn)
         Spacer(Modifier.height(20.dp))

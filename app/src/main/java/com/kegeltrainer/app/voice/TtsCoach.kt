@@ -45,6 +45,13 @@ class TtsCoach @Inject constructor(
         }
     }
 
+    fun stop() {
+        pending.set(null)
+        main.post {
+            tts?.stop()
+        }
+    }
+
     fun shutdown() {
         main.post {
             ready = false

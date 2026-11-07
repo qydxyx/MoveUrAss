@@ -22,7 +22,13 @@ data class PlanDayEntity(
     val week: Int,
 )
 
-@Entity(tableName = "sessions")
+@Entity(
+    tableName = "sessions",
+    indices = [
+        androidx.room.Index(value = ["epochDay"]),
+        androidx.room.Index(value = ["endedAt"]),
+    ],
+)
 data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val workoutId: String,

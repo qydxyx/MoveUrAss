@@ -61,6 +61,8 @@ class WorkoutEngineTest {
                 Phase(PhaseType.CONTRACT, 500L),
                 Phase(PhaseType.HOLD, 500L),
                 Phase(PhaseType.RELAX, 500L),
+                Phase(PhaseType.CONTRACT, 500L),
+                Phase(PhaseType.RELAX, 500L),
             ),
             clock::now,
         )
@@ -68,8 +70,10 @@ class WorkoutEngineTest {
         clock.t = 500
         assertEquals(1, engine.snapshot().contractionIndex)
         clock.t = 1_000
-        assertEquals(2, engine.snapshot().contractionIndex)
+        assertEquals(1, engine.snapshot().contractionIndex)
         clock.t = 1_500
+        assertEquals(1, engine.snapshot().contractionIndex)
+        clock.t = 2_000
         assertEquals(2, engine.snapshot().contractionIndex)
         assertEquals(2, engine.contractionTotal)
     }

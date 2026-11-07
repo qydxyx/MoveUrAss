@@ -16,6 +16,9 @@ interface ProfileDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: ProfileEntity)
+
+    @Query("DELETE FROM profile")
+    suspend fun clear()
 }
 
 @Dao
@@ -49,4 +52,10 @@ interface SessionDao {
 
     @Insert
     suspend fun insert(entity: SessionEntity): Long
+
+    @Insert
+    suspend fun insertAll(entities: List<SessionEntity>)
+
+    @Query("DELETE FROM sessions")
+    suspend fun clear()
 }

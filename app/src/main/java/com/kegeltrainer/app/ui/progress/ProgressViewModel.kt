@@ -32,9 +32,10 @@ data class ProgressUi(
 class ProgressViewModel @Inject constructor(
     repo: TrainerRepository,
 ) : ViewModel() {
-    val ui = repo.sessions.map { sessions ->
+    private val selectedMonth = kotlinx.coroutines.flow.MutableStateFlow(YearMonth.now())
+
+    val ui = kotlinx.coroutines.flow.combine(repo.sessions, selectedMonth) { sessions, month ->
         val done = sessions.filter { it.completed }
-        val month = YearMonth.now()
         val daysOn = done.mapNotNull { session ->
             val date = Instant.ofEpochMilli(session.endedAt).atZone(ZoneId.systemDefault()).toLocalDate()
             if (YearMonth.from(date) == month) date.dayOfMonth else null
@@ -51,6 +52,17 @@ class ProgressViewModel @Inject constructor(
             recent = sessions.take(20),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProgressUi())
+
+    fun previousMonth() {
+        selectedMonth.value = selectedMonth.value.minusMonths(1)
+    }
+
+    fun nextMonth() {
+        val currentMonth = YearMonth.now()
+        if (selectedMonth.value.isBefore(currentMonth)) {
+            selectedMonth.value = selectedMonth.value.plusMonths(1)
+        }
+    }
 
     fun titleOf(id: String) = WorkoutCatalog.find(id)?.title ?: id
 }

@@ -21,18 +21,18 @@ import kotlinx.coroutines.runBlocking
 @AndroidEntryPoint
 class ReminderReceiver : BroadcastReceiver() {
     @Inject lateinit var scheduler: ReminderScheduler
-    @Inject lateinit var prefs: UserPrefs
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            val hours = runBlocking { prefs.settings.first().reminderHours }
-            scheduler.reschedule(hours)
-            return
-        }
         if (intent.action != ACTION) return
-        val hour = intent.getIntExtra(EXTRA_HOUR, -1)
+        val minuteOfDay = when {
+            intent.hasExtra(EXTRA_MINUTE_OF_DAY) -> intent.getIntExtra(EXTRA_MINUTE_OF_DAY, -1)
+            intent.hasExtra(EXTRA_HOUR) -> intent.getIntExtra(EXTRA_HOUR, -1) * 60
+            else -> -1
+        }
         showNotification(context)
-        if (hour in 0..23) scheduler.scheduleNext(hour)
+        if (minuteOfDay in 0..1439) {
+            scheduler.scheduleNext(minuteOfDay)
+        }
     }
 
     private fun showNotification(context: Context) {
@@ -63,7 +63,8 @@ class ReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION = "com.kegeltrainer.app.REMIND"
-        const val EXTRA_HOUR = "hour"
+        const val EXTRA_MINUTE_OF_DAY = "minute_of_day"
+        const val EXTRA_HOUR = "hour" // backward compatibility
         private const val CHANNEL_ID = "kegel_reminders"
         private const val NOTIFY_ID = 42
     }

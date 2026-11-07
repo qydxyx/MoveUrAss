@@ -16,7 +16,7 @@ class WorkoutEngine(
     private var accumulatedMs: Long = 0L
     private var pauseStartedAt: Long? = null
 
-    val contractionTotal: Int = phases.count { it.isContraction }
+    val contractionTotal: Int = countContractionCycles(phases)
 
     fun snapshot(): Snapshot {
         val elapsed = elapsedMs().coerceAtMost(totalMs)
@@ -34,19 +34,23 @@ class WorkoutEngine(
             )
         }
         var acc = 0L
+        var cycleIndex = 0
+        var inEffort = false
         phases.forEachIndexed { index, phase ->
+            val isEffort = phase.isContraction
+            if (isEffort && !inEffort) {
+                cycleIndex++
+            }
+            inEffort = isEffort
             val end = acc + phase.durationMs
             if (elapsed < end) {
-                val done = phases.subList(0, index)
-                val contractionIndex = done.count { it.isContraction } +
-                    if (phase.isContraction) 1 else 0
                 return Snapshot(
                     phaseIndex = index,
                     phase = phase,
                     remainingMs = end - elapsed,
                     elapsedMs = elapsed,
                     totalMs = totalMs,
-                    contractionIndex = contractionIndex,
+                    contractionIndex = cycleIndex,
                     contractionTotal = contractionTotal,
                     isPaused = pauseStartedAt != null,
                     isFinished = false,
@@ -54,7 +58,17 @@ class WorkoutEngine(
             }
             acc = end
         }
-        return snapshot()
+        return Snapshot(
+            phaseIndex = (phases.lastIndex).coerceAtLeast(0),
+            phase = phases.lastOrNull() ?: Phase(PhaseType.REST, 0L),
+            remainingMs = 0L,
+            elapsedMs = totalMs,
+            totalMs = totalMs,
+            contractionIndex = contractionTotal,
+            contractionTotal = contractionTotal,
+            isPaused = pauseStartedAt != null,
+            isFinished = true,
+        )
     }
 
     fun pause() {
@@ -97,3 +111,16 @@ class WorkoutEngine(
 
 private val Phase.isContraction: Boolean
     get() = type == PhaseType.CONTRACT || type == PhaseType.HOLD
+
+private fun countContractionCycles(phases: List<Phase>): Int {
+    var count = 0
+    var inEffort = false
+    phases.forEach { phase ->
+        val isEffort = phase.isContraction
+        if (isEffort && !inEffort) {
+            count++
+        }
+        inEffort = isEffort
+    }
+    return count
+}

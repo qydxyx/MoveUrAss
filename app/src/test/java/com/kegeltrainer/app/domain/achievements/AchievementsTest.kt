@@ -36,6 +36,19 @@ class AchievementsTest {
         assertTrue(ids.contains("streak_7"))
     }
 
+    @Test
+    fun streakMilestonePreservedAfterDrop() {
+        val today = LocalDate.of(2026, 8, 17)
+        // 7 days consecutive in the past, then missed days until yesterday
+        val pastSessions = (10..16).map { session(today.minusDays(it.toLong())) }
+        val currentSession = listOf(session(today))
+        val allSessions = pastSessions + currentSession
+        assertEquals(1, Achievements.currentStreak(allSessions, today))
+        assertEquals(7, Achievements.longestStreak(allSessions))
+        val ids = Achievements.unlockedIds(allSessions, today)
+        assertTrue("streak_7 should remain unlocked", ids.contains("streak_7"))
+    }
+
     private fun session(day: LocalDate) = SessionRecord(
         workoutId = "quick_beginner_1",
         startedAt = day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),

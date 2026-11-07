@@ -44,4 +44,5 @@ class WorkoutDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val workout: Workout = WorkoutCatalog.byId(checkNotNull(savedStateHandle["workoutId"]))
+    val isPlan: Boolean = savedStateHandle["plan"] ?: false
 }

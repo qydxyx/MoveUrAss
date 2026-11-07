@@ -15,20 +15,20 @@ class ReminderScheduler @Inject constructor(
 ) {
     private val alarms = context.getSystemService(AlarmManager::class.java)
 
-    fun reschedule(hours: Set<Int>) {
+    fun reschedule(minutesOfDay: Set<Int>) {
         cancelAll()
-        hours.forEach { hour -> scheduleNext(hour) }
+        minutesOfDay.forEach { minutes -> scheduleNext(minutes) }
     }
 
-    fun scheduleNext(hour: Int) {
-        val triggerAt = nextTrigger(hour)
+    fun scheduleNext(minuteOfDay: Int) {
+        val triggerAt = nextTrigger(minuteOfDay)
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             action = ReminderReceiver.ACTION
-            putExtra(ReminderReceiver.EXTRA_HOUR, hour)
+            putExtra(ReminderReceiver.EXTRA_MINUTE_OF_DAY, minuteOfDay)
         }
         val pending = PendingIntent.getBroadcast(
             context,
-            requestCode(hour),
+            requestCode(minuteOfDay),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -38,13 +38,14 @@ class ReminderScheduler @Inject constructor(
     }
 
     fun cancelAll() {
-        (0..23).forEach { hour ->
+        // Clear all potentially scheduled minute slots (0..1439)
+        (0..1439).forEach { minute ->
             val intent = Intent(context, ReminderReceiver::class.java).apply {
                 action = ReminderReceiver.ACTION
             }
             val pending = PendingIntent.getBroadcast(
                 context,
-                requestCode(hour),
+                requestCode(minute),
                 intent,
                 PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
             )
@@ -55,11 +56,13 @@ class ReminderScheduler @Inject constructor(
         }
     }
 
-    private fun nextTrigger(hour: Int): Long {
+    private fun nextTrigger(minuteOfDay: Int): Long {
+        val hour = (minuteOfDay / 60).coerceIn(0, 23)
+        val minute = (minuteOfDay % 60).coerceIn(0, 59)
         val now = Calendar.getInstance()
         val target = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, 0)
+            set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis <= now.timeInMillis) add(Calendar.DAY_OF_YEAR, 1)
@@ -67,5 +70,5 @@ class ReminderScheduler @Inject constructor(
         return target.timeInMillis
     }
 
-    private fun requestCode(hour: Int) = 7100 + hour
+    private fun requestCode(minuteOfDay: Int) = 7000 + minuteOfDay
 }

@@ -62,19 +62,38 @@ fun PlayerScreen(
     vm: PlayerViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    DisposableEffect(ui.stealth) {
+        if (ui.stealth) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose { activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+    }
+
     DisposableEffect(Unit) {
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        onDispose { activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+        if (ui.backgroundPlay) {
+            com.kegeltrainer.app.player.WorkoutForegroundService.start(context)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            com.kegeltrainer.app.player.WorkoutForegroundService.stop(context)
+        }
     }
+
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, ui.backgroundPlay) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) vm.onBackground()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+
     BackHandler {
         if (ui.finished) onExit() else vm.requestExit()
     }
@@ -120,11 +139,30 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = vm::requestExit) { Text("结束", color = colors.onSurfaceVariant) }
-                Text(ui.workout.title, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    if (ui.stealth) "训练中" else ui.workout.title,
+                    color = colors.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Row {
-                    IconToggle(Icons.Outlined.GraphicEq, ui.voice, vm::toggleVoice)
-                    IconToggle(Icons.Outlined.Vibration, ui.haptic, vm::toggleHaptic)
-                    IconToggle(Icons.Outlined.VisibilityOff, ui.stealth, vm::toggleStealth)
+                    IconToggle(
+                        icon = Icons.Outlined.GraphicEq,
+                        label = if (ui.voice) "关闭语音" else "开启语音",
+                        on = ui.voice,
+                        onClick = vm::toggleVoice,
+                    )
+                    IconToggle(
+                        icon = Icons.Outlined.Vibration,
+                        label = if (ui.haptic) "关闭震动" else "开启震动",
+                        on = ui.haptic,
+                        onClick = vm::toggleHaptic,
+                    )
+                    IconToggle(
+                        icon = Icons.Outlined.VisibilityOff,
+                        label = if (ui.stealth) "退出隐蔽模式" else "进入隐蔽模式",
+                        on = ui.stealth,
+                        onClick = vm::toggleStealth,
+                    )
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -141,20 +179,24 @@ fun PlayerScreen(
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(phase.type.displayLabel(), color = color, style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        if (ui.stealth) "●" else phase.type.displayLabel(),
+                        color = color,
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
                     Text(
                         "${ui.snapshot.remainingSec}",
                         color = colors.onSurface,
                         style = MaterialTheme.typography.displayLarge,
                     )
-                    if (phase.intensity > 1) {
+                    if (!ui.stealth && phase.intensity > 1) {
                         Text("强度 ${phase.intensity}", color = colors.onSurfaceVariant)
                     }
                 }
             }
             Spacer(Modifier.height(24.dp))
             Text(
-                "收缩  ${ui.snapshot.contractionIndex} / ${ui.snapshot.contractionTotal}",
+                if (ui.stealth) "${ui.snapshot.contractionIndex} / ${ui.snapshot.contractionTotal}" else "收缩  ${ui.snapshot.contractionIndex} / ${ui.snapshot.contractionTotal}",
                 color = colors.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
@@ -237,13 +279,14 @@ private fun CompletePane(ui: PlayerUi, onDone: () -> Unit) {
 @Composable
 private fun IconToggle(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
     on: Boolean,
     onClick: () -> Unit,
 ) {
     IconButton(onClick = onClick) {
         Icon(
             icon,
-            contentDescription = null,
+            contentDescription = label,
             tint = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

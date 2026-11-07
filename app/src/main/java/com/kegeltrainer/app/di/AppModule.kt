@@ -19,7 +19,9 @@ object AppModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "kegel.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "kegel.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun profileDao(db: AppDatabase): ProfileDao = db.profileDao()

@@ -59,24 +59,35 @@ class OnboardingViewModel @Inject constructor(
 
     fun setGuidePage(page: Int) = _ui.update { it.copy(guidePage = page) }
 
+    private var baselineStartedRealtime = 0L
+
     fun skipBaseline() {
         _ui.update { it.copy(baselineHoldSec = null, baselineRunning = false) }
         goNext()
     }
 
-    fun startBaseline() = _ui.update { it.copy(baselineRunning = true, baselineElapsedSec = 0) }
+    fun startBaseline() {
+        baselineStartedRealtime = android.os.SystemClock.elapsedRealtime()
+        _ui.update { it.copy(baselineRunning = true, baselineElapsedSec = 0) }
+    }
 
     fun tickBaseline() {
         val current = _ui.value
         if (!current.baselineRunning) return
-        val next = (current.baselineElapsedSec + 1).coerceAtMost(15)
+        val elapsedSec = ((android.os.SystemClock.elapsedRealtime() - baselineStartedRealtime) / 1000L).toInt()
+        val next = elapsedSec.coerceIn(0, 15)
         _ui.update { it.copy(baselineElapsedSec = next) }
         if (next >= 15) finishBaseline()
     }
 
     fun finishBaseline() {
-        val sec = _ui.value.baselineElapsedSec.coerceAtLeast(1)
-        _ui.update { it.copy(baselineRunning = false, baselineHoldSec = sec) }
+        val elapsedSec = if (baselineStartedRealtime > 0L) {
+            ((android.os.SystemClock.elapsedRealtime() - baselineStartedRealtime) / 1000L).toInt()
+        } else {
+            _ui.value.baselineElapsedSec
+        }
+        val sec = elapsedSec.coerceIn(1, 15)
+        _ui.update { it.copy(baselineRunning = false, baselineHoldSec = sec, baselineElapsedSec = sec) }
         goNext()
     }
 

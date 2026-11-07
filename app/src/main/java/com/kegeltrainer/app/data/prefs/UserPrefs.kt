@@ -19,9 +19,14 @@ data class AppSettings(
     val voiceEnabled: Boolean = true,
     val hapticEnabled: Boolean = true,
     val stealthEnabled: Boolean = false,
-    val reminderHours: Set<Int> = setOf(21),
+    val backgroundPlayEnabled: Boolean = true,
+    val reminderMinutes: Set<Int> = setOf(21 * 60), // 21:00 = 1260 minutes
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-)
+) {
+    // For legacy/quick compatibility
+    val reminderHours: Set<Int>
+        get() = reminderMinutes.map { it / 60 }.toSet()
+}
 
 @Singleton
 class UserPrefs @Inject constructor(
@@ -41,9 +46,13 @@ class UserPrefs @Inject constructor(
 
     suspend fun setStealth(value: Boolean) = edit { it[STEALTH] = value }
 
-    suspend fun setReminderHours(hours: Set<Int>) = edit {
-        it[REMINDERS] = hours.sorted().joinToString(",")
+    suspend fun setBackgroundPlay(value: Boolean) = edit { it[BACKGROUND_PLAY] = value }
+
+    suspend fun setReminderMinutes(minutes: Set<Int>) = edit {
+        it[REMINDERS_MINUTES] = minutes.sorted().joinToString(",")
     }
+
+    suspend fun setReminderHours(hours: Set<Int>) = setReminderMinutes(hours.map { it * 60 }.toSet())
 
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[THEME] = mode.name }
 
@@ -51,26 +60,42 @@ class UserPrefs @Inject constructor(
         store.edit(block)
     }
 
-    private fun Preferences.toSettings(): AppSettings = AppSettings(
-        onboarded = this[ONBOARDED] ?: false,
-        voiceEnabled = this[VOICE] ?: true,
-        hapticEnabled = this[HAPTIC] ?: true,
-        stealthEnabled = this[STEALTH] ?: false,
-        reminderHours = this[REMINDERS]
-            ?.split(",")
-            ?.mapNotNull { it.toIntOrNull() }
-            ?.toSet()
-            ?: setOf(21),
-        themeMode = this[THEME]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
-            ?: ThemeMode.SYSTEM,
-    )
+    private fun Preferences.toSettings(): AppSettings {
+        val minutesString = this[REMINDERS_MINUTES]
+        val reminders: Set<Int> = if (!minutesString.isNullOrBlank()) {
+            minutesString.split(",")
+                .mapNotNull { it.toIntOrNull() }
+                .toSet()
+        } else {
+            // Backward compatibility with legacy REMINDERS ("8,12,21" -> hour values)
+            this[REMINDERS]
+                ?.split(",")
+                ?.mapNotNull { it.toIntOrNull() }
+                ?.map { it * 60 }
+                ?.toSet()
+                ?: setOf(21 * 60)
+        }
+
+        return AppSettings(
+            onboarded = this[ONBOARDED] ?: false,
+            voiceEnabled = this[VOICE] ?: true,
+            hapticEnabled = this[HAPTIC] ?: true,
+            stealthEnabled = this[STEALTH] ?: false,
+            backgroundPlayEnabled = this[BACKGROUND_PLAY] ?: true,
+            reminderMinutes = reminders,
+            themeMode = this[THEME]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
+                ?: ThemeMode.SYSTEM,
+        )
+    }
 
     private companion object {
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val VOICE = booleanPreferencesKey("voice")
         val HAPTIC = booleanPreferencesKey("haptic")
         val STEALTH = booleanPreferencesKey("stealth")
+        val BACKGROUND_PLAY = booleanPreferencesKey("background_play")
         val REMINDERS = stringPreferencesKey("reminders")
+        val REMINDERS_MINUTES = stringPreferencesKey("reminders_minutes")
         val THEME = stringPreferencesKey("theme_mode")
     }
 }

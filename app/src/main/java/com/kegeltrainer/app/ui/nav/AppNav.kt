@@ -43,12 +43,12 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val MAIN = "main"
     const val PLAYER = "player/{workoutId}?plan={plan}"
-    const val DETAIL = "detail/{workoutId}"
+    const val DETAIL = "detail/{workoutId}?plan={plan}"
     const val ARTICLE = "article/{articleId}"
     const val DISCLAIMER = "disclaimer"
 
     fun player(workoutId: String, plan: Boolean) = "player/$workoutId?plan=$plan"
-    fun detail(workoutId: String) = "detail/$workoutId"
+    fun detail(workoutId: String, plan: Boolean = false) = "detail/$workoutId?plan=$plan"
     fun article(id: String) = "article/$id"
 }
 
@@ -82,7 +82,7 @@ fun AppRoot(vm: SettingsViewModel = hiltViewModel()) {
         composable(Routes.MAIN) {
             MainTabs(
                 onStart = { id, plan -> nav.navigate(Routes.player(id, plan)) },
-                onDetail = { nav.navigate(Routes.detail(it)) },
+                onDetail = { id, plan -> nav.navigate(Routes.detail(id, plan)) },
                 onArticle = { nav.navigate(Routes.article(it)) },
                 onDisclaimer = { nav.navigate(Routes.DISCLAIMER) },
                 onRedoOnboarding = {
@@ -106,11 +106,17 @@ fun AppRoot(vm: SettingsViewModel = hiltViewModel()) {
         }
         composable(
             route = Routes.DETAIL,
-            arguments = listOf(navArgument("workoutId") { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument("workoutId") { type = NavType.StringType },
+                navArgument("plan") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+            ),
         ) {
             WorkoutDetailScreen(
                 onBack = { nav.popBackStack() },
-                onStart = { id -> nav.navigate(Routes.player(id, false)) },
+                onStart = { id, plan -> nav.navigate(Routes.player(id, plan)) },
             )
         }
         composable(
@@ -128,7 +134,7 @@ fun AppRoot(vm: SettingsViewModel = hiltViewModel()) {
 @Composable
 private fun MainTabs(
     onStart: (String, Boolean) -> Unit,
-    onDetail: (String) -> Unit,
+    onDetail: (String, Boolean) -> Unit,
     onArticle: (String) -> Unit,
     onDisclaimer: () -> Unit,
     onRedoOnboarding: () -> Unit,
@@ -171,10 +177,10 @@ private fun MainTabs(
             modifier = Modifier.padding(padding),
         ) {
             composable("home") {
-                HomeScreen(onStart = onStart, onDetail = onDetail)
+                HomeScreen(onStart = onStart, onDetail = { onDetail(it, true) })
             }
             composable("library") {
-                LibraryScreen(onOpen = onDetail)
+                LibraryScreen(onOpen = { onDetail(it, false) })
             }
             composable("progress") {
                 ProgressScreen()

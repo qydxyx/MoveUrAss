@@ -30,24 +30,26 @@ data class HomeUi(
 class HomeViewModel @Inject constructor(
     repo: TrainerRepository,
 ) : ViewModel() {
-    val ui = combine(repo.todayState, repo.sessions) { today, sessions ->
+    val ui = combine(repo.todayState, repo.sessions, repo.currentEpochDay) { today, sessions, epochDay ->
         val workout = today.planned?.let { WorkoutCatalog.find(it.workoutId) }
-        val weekFlags = weekCompletion(sessions)
+        val weekFlags = weekCompletion(sessions, LocalDate.ofEpochDay(epochDay))
         HomeUi(
-            streak = Achievements.currentStreak(sessions),
+            streak = Achievements.currentStreak(sessions, LocalDate.ofEpochDay(epochDay)),
             workout = workout,
             dayIndex = today.dayIndex,
             planDone = today.planCompletedToday,
             weekFlags = weekFlags,
             tip = KnowledgeArticles.rotatingTips[
-                (LocalDate.now().toEpochDay().toInt()).mod(KnowledgeArticles.rotatingTips.size),
+                (epochDay.toInt()).mod(KnowledgeArticles.rotatingTips.size),
             ],
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUi())
 }
 
-private fun weekCompletion(sessions: List<com.kegeltrainer.app.domain.model.SessionRecord>): List<Boolean> {
-    val today = LocalDate.now()
+private fun weekCompletion(
+    sessions: List<com.kegeltrainer.app.domain.model.SessionRecord>,
+    today: LocalDate = LocalDate.now(),
+): List<Boolean> {
     val monday = today.with(DayOfWeek.MONDAY)
     val doneDays = sessions.filter { it.completed }.map {
         Instant.ofEpochMilli(it.endedAt).atZone(ZoneId.systemDefault()).toLocalDate()

@@ -31,7 +31,7 @@ object Achievements {
     ): Set<String> {
         val done = sessions.filter { it.completed }
         if (done.isEmpty()) return emptySet()
-        val streak = currentStreak(done, today)
+        val longestStreak = longestStreak(done)
         val count = done.size
         val hasAdvanced = done.any { session ->
             val level = WorkoutCatalog.find(session.workoutId)?.level
@@ -39,9 +39,9 @@ object Achievements {
         }
         return buildSet {
             add("first")
-            if (streak >= 3) add("streak_3")
-            if (streak >= 7) add("streak_7")
-            if (streak >= 21) add("streak_21")
+            if (longestStreak >= 3) add("streak_3")
+            if (longestStreak >= 7) add("streak_7")
+            if (longestStreak >= 21) add("streak_21")
             if (count >= 10) add("count_10")
             if (count >= 30) add("count_30")
             if (count >= 60) add("count_60")

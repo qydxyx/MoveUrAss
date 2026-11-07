@@ -29,6 +29,7 @@ data class PlayerUi(
     val voice: Boolean,
     val haptic: Boolean,
     val stealth: Boolean,
+    val backgroundPlay: Boolean = true,
     val confirmExit: Boolean = false,
     val finished: Boolean = false,
     val tip: String = "",
@@ -39,46 +40,43 @@ data class PlayerUi(
 class PlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repo: TrainerRepository,
-    private val tts: TtsCoach,
-    private val haptic: HapticCoach,
+    private val sessionManager: WorkoutSessionManager,
 ) : ViewModel() {
     private val workoutId: String = checkNotNull(savedStateHandle["workoutId"])
     private val isPlan: Boolean = savedStateHandle["plan"] ?: false
     val workout: Workout = WorkoutCatalog.byId(workoutId)
 
-    private val engine = WorkoutEngine(workout) { SystemClock.elapsedRealtime() }
-    private val startedAt = System.currentTimeMillis()
-    private var lastPhaseIndex = -1
-    private var lastSpokenSec = -1
-    private var ticker: Job? = null
-    private var settings = AppSettings()
-
     private val _ui = MutableStateFlow(
         PlayerUi(
             workout = workout,
-            snapshot = engine.snapshot(),
+            snapshot = WorkoutEngine(workout) { SystemClock.elapsedRealtime() }.snapshot(),
             voice = true,
             haptic = true,
             stealth = false,
+            backgroundPlay = true,
         ),
     )
     val ui: StateFlow<PlayerUi> = _ui
 
     init {
+        sessionManager.startSession(workout, isPlan)
         viewModelScope.launch {
-            repo.settings.collect { value ->
-                settings = value
+            sessionManager.state.collect { state ->
+                val snap = state.snapshot ?: return@collect
                 _ui.update {
                     it.copy(
-                        voice = value.voiceEnabled,
-                        haptic = value.hapticEnabled,
-                        stealth = value.stealthEnabled,
+                        snapshot = snap,
+                        voice = state.settings.voiceEnabled,
+                        haptic = state.settings.hapticEnabled,
+                        stealth = state.settings.stealthEnabled,
+                        backgroundPlay = state.settings.backgroundPlayEnabled,
+                        finished = state.isFinished,
+                        tip = state.tip,
+                        recorded = state.recorded,
                     )
                 }
             }
         }
-        startTicker()
-        announce(engine.snapshot())
     }
 
     fun toggleVoice() {
@@ -94,104 +92,36 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun pauseOrResume() {
-        if (_ui.value.finished) return
-        if (engine.snapshot().isPaused) engine.resume() else engine.pause()
-        publish()
+        sessionManager.pauseOrResume()
     }
 
     fun requestExit() {
         if (_ui.value.finished) return
-        if (!engine.snapshot().isPaused) engine.pause()
+        sessionManager.pause()
         _ui.update { it.copy(confirmExit = true) }
-        publish()
     }
 
-    fun dismissExit() = _ui.update { it.copy(confirmExit = false) }
+    fun dismissExit() {
+        _ui.update { it.copy(confirmExit = false) }
+        sessionManager.resume()
+    }
 
     fun confirmExit(onDone: () -> Unit) {
         viewModelScope.launch {
-            save(completed = false)
+            sessionManager.saveSession(completed = false)
+            sessionManager.stopSession()
             onDone()
         }
     }
 
-    fun leaveFinished(onDone: () -> Unit) = onDone()
+    fun leaveFinished(onDone: () -> Unit) {
+        sessionManager.stopSession()
+        onDone()
+    }
 
     fun onBackground() {
-        if (!_ui.value.finished && !engine.snapshot().isPaused) {
-            engine.pause()
-            publish()
+        if (!_ui.value.backgroundPlay && !_ui.value.finished) {
+            sessionManager.pause()
         }
-    }
-
-    private fun startTicker() {
-        ticker?.cancel()
-        ticker = viewModelScope.launch {
-            while (true) {
-                val snap = engine.snapshot()
-                if (snap.phaseIndex != lastPhaseIndex) {
-                    announce(snap)
-                    lastPhaseIndex = snap.phaseIndex
-                    lastSpokenSec = -1
-                } else if (shouldCountDown(snap) && snap.remainingSec != lastSpokenSec) {
-                    if (_ui.value.voice) tts.speakCountdown(snap.remainingSec)
-                    lastSpokenSec = snap.remainingSec
-                }
-                if (snap.isFinished && !_ui.value.finished) {
-                    finish()
-                    break
-                }
-                publish()
-                delay(50)
-            }
-        }
-    }
-
-    private fun announce(snap: WorkoutEngine.Snapshot) {
-        if (snap.isFinished) return
-        if (_ui.value.voice) tts.speakPhase(snap.phase.type, snap.phase.durationMs)
-        if (_ui.value.haptic && snap.phase.type != PhaseType.REST) haptic.onPhase(snap.phase.type)
-    }
-
-    /** Last-3-second count only on longer holds. 1s flick phases start at remainingSec==1. */
-    private fun shouldCountDown(snap: WorkoutEngine.Snapshot): Boolean {
-        if (snap.isPaused || snap.isFinished) return false
-        if (snap.remainingSec !in 1..3) return false
-        return snap.phase.durationMs > 3_000L
-    }
-
-    private fun finish() {
-        ticker?.cancel()
-        val tip = workout.coachTips.randomOrNull()
-            ?: KnowledgeArticles.rotatingTips.random()
-        _ui.update {
-            it.copy(
-                finished = true,
-                snapshot = engine.snapshot(),
-                tip = tip,
-            )
-        }
-        viewModelScope.launch { save(completed = true) }
-    }
-
-    private suspend fun save(completed: Boolean) {
-        if (_ui.value.recorded) return
-        val snap = engine.snapshot()
-        repo.recordSession(
-            SessionRecord(
-                workoutId = workout.id,
-                startedAt = startedAt,
-                endedAt = System.currentTimeMillis(),
-                durationMs = snap.elapsedMs,
-                completed = completed,
-                isPlanSession = isPlan,
-                contractionCount = if (completed) workout.contractionCount else snap.contractionIndex,
-            ),
-        )
-        _ui.update { it.copy(recorded = true) }
-    }
-
-    private fun publish() {
-        _ui.update { it.copy(snapshot = engine.snapshot()) }
     }
 }

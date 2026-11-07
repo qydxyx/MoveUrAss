@@ -32,6 +32,7 @@ class TrainerRepository @Inject constructor(
     private val planDao: PlanDao,
     private val sessionDao: SessionDao,
     private val prefs: UserPrefs,
+    private val reminderScheduler: com.kegeltrainer.app.notify.ReminderScheduler,
 ) {
     val settings = prefs.settings
 
@@ -43,6 +44,13 @@ class TrainerRepository @Inject constructor(
 
     val sessions: Flow<List<SessionRecord>> = sessionDao.observeAll().map { rows ->
         rows.map { it.toDomain() }
+    }
+
+    private val _currentEpochDay = kotlinx.coroutines.flow.MutableStateFlow(LocalDate.now().toEpochDay())
+    val currentEpochDay: Flow<Long> = _currentEpochDay
+
+    fun refreshDate() {
+        _currentEpochDay.value = LocalDate.now().toEpochDay()
     }
 
     data class TodayState(
@@ -58,9 +66,9 @@ class TrainerRepository @Inject constructor(
         profile,
         planDays,
         sessions,
-    ) { profile, plan, sessions ->
+        currentEpochDay,
+    ) { profile, plan, sessions, today ->
         val start = profile?.planStartedEpochDay
-        val today = LocalDate.now().toEpochDay()
         val dayIndex = if (start == null) 0 else {
             val raw = (today - start).toInt()
             val cycle = PlanGenerator.PLAN_DAYS
@@ -89,6 +97,9 @@ class TrainerRepository @Inject constructor(
         planDao.clear()
         planDao.upsertAll(plan.map { PlanDayEntity(it.dayIndex, it.workoutId, it.week) })
         prefs.setOnboarded(true)
+        val defaultMinutes = setOf(21 * 60)
+        prefs.setReminderMinutes(defaultMinutes)
+        reminderScheduler.reschedule(defaultMinutes)
     }
 
     suspend fun recordSession(record: SessionRecord) {
@@ -113,17 +124,26 @@ class TrainerRepository @Inject constructor(
     suspend fun setVoice(enabled: Boolean) = prefs.setVoice(enabled)
     suspend fun setHaptic(enabled: Boolean) = prefs.setHaptic(enabled)
     suspend fun setStealth(enabled: Boolean) = prefs.setStealth(enabled)
-    suspend fun setReminderHours(hours: Set<Int>) = prefs.setReminderHours(hours)
+    suspend fun setBackgroundPlay(enabled: Boolean) = prefs.setBackgroundPlay(enabled)
+    suspend fun setReminderMinutes(minutes: Set<Int>) {
+        prefs.setReminderMinutes(minutes)
+        reminderScheduler.reschedule(minutes)
+    }
+    suspend fun setReminderHours(hours: Set<Int>) = setReminderMinutes(hours.map { it * 60 }.toSet())
     suspend fun setThemeMode(mode: ThemeMode) = prefs.setThemeMode(mode)
 
     fun workoutTitle(id: String): String = WorkoutCatalog.find(id)?.title ?: id
 }
 
 private fun ProfileEntity.toDomain(): UserProfile = UserProfile(
-    ageRange = AgeRange.valueOf(ageRange),
-    experience = Experience.valueOf(experience),
-    goals = if (goalsCsv.isBlank()) emptySet() else goalsCsv.split(",").map { Goal.valueOf(it) }.toSet(),
-    dailyBudget = DailyBudget.valueOf(dailyBudget),
+    ageRange = runCatching { AgeRange.valueOf(ageRange) }.getOrDefault(AgeRange.AGE_30_45),
+    experience = runCatching { Experience.valueOf(experience) }.getOrDefault(Experience.NEVER),
+    goals = if (goalsCsv.isBlank()) emptySet() else {
+        goalsCsv.split(",")
+            .mapNotNull { name -> runCatching { Goal.valueOf(name) }.getOrNull() }
+            .toSet()
+    },
+    dailyBudget = runCatching { DailyBudget.valueOf(dailyBudget) }.getOrDefault(DailyBudget.MEDIUM),
     baselineHoldSec = baselineHoldSec,
     planStartedEpochDay = planStartedEpochDay,
 )

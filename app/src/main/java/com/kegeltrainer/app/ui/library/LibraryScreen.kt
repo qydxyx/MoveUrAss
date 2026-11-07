@@ -35,26 +35,29 @@ fun LibraryScreen(
     vm: LibraryViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
-    ScreenColumn(
+    androidx.compose.foundation.lazy.LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
-        Text("课程库", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
-        Spacer(Modifier.height(12.dp))
-        FilterRow(
-            options = Level.entries.map { it to it.displayName() },
-            selected = ui.level,
-            onPick = vm::setLevel,
-        )
-        Spacer(Modifier.height(8.dp))
-        FilterRow(
-            options = WorkoutType.entries.map { it to it.displayName() },
-            selected = ui.type,
-            onPick = vm::setType,
-        )
-        Spacer(Modifier.height(16.dp))
-        ui.items.forEach { workout ->
+        item {
+            Text("课程库", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(12.dp))
+            FilterRow(
+                options = Level.entries.map { it to it.displayName() },
+                selected = ui.level,
+                onPick = vm::setLevel,
+            )
+            Spacer(Modifier.height(8.dp))
+            FilterRow(
+                options = WorkoutType.entries.map { it to it.displayName() },
+                selected = ui.type,
+                onPick = vm::setType,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+        items(ui.items.size, key = { ui.items[it].id }) { index ->
+            val workout = ui.items[index]
             AppCard(onClick = { onOpen(workout.id) }, modifier = Modifier.padding(bottom = 10.dp)) {
                 Text(workout.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(4.dp))
@@ -87,7 +90,7 @@ private fun <T> FilterRow(
 @Composable
 fun WorkoutDetailScreen(
     onBack: () -> Unit,
-    onStart: (String) -> Unit,
+    onStart: (String, Boolean) -> Unit,
     vm: WorkoutDetailViewModel = hiltViewModel(),
 ) {
     val workout = vm.workout
@@ -128,7 +131,7 @@ fun WorkoutDetailScreen(
             Text("· $it", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
         }
         Spacer(Modifier.height(24.dp))
-        PrimaryButton("开始训练", onClick = { onStart(workout.id) })
+        PrimaryButton("开始训练", onClick = { onStart(workout.id, vm.isPlan) })
         Spacer(Modifier.height(8.dp))
         androidx.compose.material3.TextButton(onClick = onBack) {
             Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -19,7 +19,15 @@ jobs:
           java-version: "17"
 
       - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon
+        run: |
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace || {
+            echo "::error::Unit tests failed"
+            find app/build/reports/tests -type f | while read -r file; do
+              echo "=== $file ==="
+              cat "$file"
+            done
+            exit 1
+          }
 
       - name: Prepare Signing Keystore
         id: keystore
@@ -44,8 +52,13 @@ jobs:
       - name: Name APK from tag
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk \
-            "dist/MoveUrAss-${GITHUB_REF_NAME}.apk"
+          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "::error::No APK produced in app/build/outputs/apk/release"
+            exit 1
+          fi
+          cp "$APK_FILE" "dist/MoveUrAss-${GITHUB_REF_NAME}.apk"
+          ls -lh dist/
 
       - uses: softprops/action-gh-release@v2
         with:

@@ -110,8 +110,11 @@ fun SettingsScreen(
                 }
             }
             Spacer(Modifier.height(16.dp))
+            Text("跟练与反馈", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(8.dp))
             AppCard {
                 SettingRow("语音引导", settings.voiceEnabled) { vm.setVoice(it) }
+                SettingRow("完成提示音", settings.completionSoundEnabled) { vm.setCompletionSound(it) }
                 SettingRow("震动引导", settings.hapticEnabled) { vm.setHaptic(it) }
                 SettingRow("隐蔽模式", settings.stealthEnabled) { vm.setStealth(it) }
                 SettingRow("息屏继续跟练", settings.backgroundPlayEnabled) { vm.setBackgroundPlay(it) }

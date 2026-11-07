@@ -38,6 +38,7 @@ class SettingsViewModel @Inject constructor(
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
     fun setVoice(value: Boolean) = viewModelScope.launch { repo.setVoice(value) }
+    fun setCompletionSound(value: Boolean) = viewModelScope.launch { repo.setCompletionSound(value) }
     fun setHaptic(value: Boolean) = viewModelScope.launch { repo.setHaptic(value) }
     fun setStealth(value: Boolean) = viewModelScope.launch { repo.setStealth(value) }
     fun setBackgroundPlay(value: Boolean) = viewModelScope.launch { repo.setBackgroundPlay(value) }

@@ -65,6 +65,7 @@ data class BackupSession(
 @Serializable
 data class BackupSettings(
     val voiceEnabled: Boolean = true,
+    val completionSoundEnabled: Boolean = true,
     val hapticEnabled: Boolean = true,
     val stealthEnabled: Boolean = false,
     val backgroundPlayEnabled: Boolean = true,
@@ -123,6 +124,7 @@ class BackupManager @Inject constructor(
         // Restore user preferences
         prefs.setOnboarded(payload.profile != null)
         prefs.setVoice(payload.settings.voiceEnabled)
+        prefs.setCompletionSound(payload.settings.completionSoundEnabled)
         prefs.setHaptic(payload.settings.hapticEnabled)
         prefs.setStealth(payload.settings.stealthEnabled)
         prefs.setBackgroundPlay(payload.settings.backgroundPlayEnabled)
@@ -190,6 +192,7 @@ private fun BackupSession.toEntity() = SessionEntity(
 
 private fun AppSettings.toBackup() = BackupSettings(
     voiceEnabled = voiceEnabled,
+    completionSoundEnabled = completionSoundEnabled,
     hapticEnabled = hapticEnabled,
     stealthEnabled = stealthEnabled,
     backgroundPlayEnabled = backgroundPlayEnabled,

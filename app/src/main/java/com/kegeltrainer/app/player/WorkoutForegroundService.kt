@@ -71,6 +71,9 @@ class WorkoutForegroundService : Service() {
                 val snap = state.snapshot
                 val workout = state.workout
                 if (snap == null || workout == null || state.isFinished) {
+                    if (state.isFinished && workout != null) {
+                        showCompletionNotification(workout.title, state.settings.stealthEnabled)
+                    }
                     stopSelf()
                     return@collectLatest
                 }
@@ -131,6 +134,33 @@ class WorkoutForegroundService : Service() {
         return builder.build()
     }
 
+    private fun showCompletionNotification(workoutTitle: String, isStealth: Boolean) {
+        val openAppIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val title = if (isStealth) getString(R.string.app_name) else "🎉 训练已完成！"
+        val text = if (isStealth) "今日训练已顺利完成，已记录到履历。" else "$workoutTitle · 今日训练已记录"
+
+        val notification = NotificationCompat.Builder(this, COMPLETION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(openAppIntent)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.notify(COMPLETION_NOTIFICATION_ID, notification)
+    }
+
     private fun acquireWakeLock() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
         wakeLock = powerManager.newWakeLock(
@@ -151,8 +181,8 @@ class WorkoutForegroundService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = getSystemService(NotificationManager::class.java)
-            val channel = NotificationChannel(
+            val manager = getSystemService(NotificationManager::class.java) ?: return
+            val playbackChannel = NotificationChannel(
                 CHANNEL_ID,
                 "训练跟练",
                 NotificationManager.IMPORTANCE_LOW,
@@ -160,13 +190,26 @@ class WorkoutForegroundService : Service() {
                 description = "锁屏与后台训练节奏提醒"
                 setShowBadge(false)
             }
-            manager?.createNotificationChannel(channel)
+
+            val completionChannel = NotificationChannel(
+                COMPLETION_CHANNEL_ID,
+                "训练完成通知",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "训练完成提醒与记录"
+                setShowBadge(true)
+            }
+
+            manager.createNotificationChannel(playbackChannel)
+            manager.createNotificationChannel(completionChannel)
         }
     }
 
     companion object {
         const val CHANNEL_ID = "kegel_workout_playback"
+        const val COMPLETION_CHANNEL_ID = "kegel_workout_completion"
         const val NOTIFICATION_ID = 43
+        const val COMPLETION_NOTIFICATION_ID = 44
         const val ACTION_PAUSE_RESUME = "com.kegeltrainer.app.PAUSE_RESUME"
         const val ACTION_STOP = "com.kegeltrainer.app.STOP_WORKOUT"
 

@@ -45,6 +45,7 @@ class BackupCodecTest {
             ),
             settings = BackupSettings(
                 voiceEnabled = true,
+                completionSoundEnabled = false,
                 hapticEnabled = false,
                 stealthEnabled = true,
                 backgroundPlayEnabled = true,
@@ -62,6 +63,7 @@ class BackupCodecTest {
         assertEquals(listOf("CONTROL", "PROSTATE"), decoded.profile?.goals)
         assertEquals(1, decoded.planDays.size)
         assertEquals(1, decoded.sessions.size)
+        assertEquals(false, decoded.settings.completionSoundEnabled)
         assertTrue(decoded.settings.stealthEnabled)
         assertEquals(listOf(540, 1260), decoded.settings.reminderMinutes)
     }

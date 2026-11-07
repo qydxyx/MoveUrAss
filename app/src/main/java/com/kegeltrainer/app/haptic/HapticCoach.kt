@@ -32,6 +32,15 @@ class HapticCoach @Inject constructor(
         runCatching { vibrator?.vibrate(effect) }
     }
 
+    fun onComplete() {
+        val effect = waveform(
+            longArrayOf(0, 100, 80, 100, 80, 220),
+            intArrayOf(0, 180, 0, 220, 0, 255),
+            -1,
+        )
+        runCatching { vibrator?.vibrate(effect) }
+    }
+
     private fun oneShot(ms: Long, amplitude: Int): VibrationEffect =
         VibrationEffect.createOneShot(ms, amplitude.coerceIn(1, 255))
 

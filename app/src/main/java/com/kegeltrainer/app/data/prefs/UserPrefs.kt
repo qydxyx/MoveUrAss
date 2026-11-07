@@ -20,6 +20,7 @@ data class AppSettings(
     val hapticEnabled: Boolean = true,
     val stealthEnabled: Boolean = false,
     val backgroundPlayEnabled: Boolean = true,
+    val completionSoundEnabled: Boolean = true,
     val reminderMinutes: Set<Int> = setOf(21 * 60), // 21:00 = 1260 minutes
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
 ) {
@@ -47,6 +48,8 @@ class UserPrefs @Inject constructor(
     suspend fun setStealth(value: Boolean) = edit { it[STEALTH] = value }
 
     suspend fun setBackgroundPlay(value: Boolean) = edit { it[BACKGROUND_PLAY] = value }
+
+    suspend fun setCompletionSound(value: Boolean) = edit { it[COMPLETION_SOUND] = value }
 
     suspend fun setReminderMinutes(minutes: Set<Int>) = edit {
         it[REMINDERS_MINUTES] = minutes.sorted().joinToString(",")
@@ -82,6 +85,7 @@ class UserPrefs @Inject constructor(
             hapticEnabled = this[HAPTIC] ?: true,
             stealthEnabled = this[STEALTH] ?: false,
             backgroundPlayEnabled = this[BACKGROUND_PLAY] ?: true,
+            completionSoundEnabled = this[COMPLETION_SOUND] ?: true,
             reminderMinutes = reminders,
             themeMode = this[THEME]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
@@ -94,6 +98,7 @@ class UserPrefs @Inject constructor(
         val HAPTIC = booleanPreferencesKey("haptic")
         val STEALTH = booleanPreferencesKey("stealth")
         val BACKGROUND_PLAY = booleanPreferencesKey("background_play")
+        val COMPLETION_SOUND = booleanPreferencesKey("completion_sound")
         val REMINDERS = stringPreferencesKey("reminders")
         val REMINDERS_MINUTES = stringPreferencesKey("reminders_minutes")
         val THEME = stringPreferencesKey("theme_mode")

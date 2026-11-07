@@ -8,6 +8,7 @@ import com.kegeltrainer.app.domain.model.PhaseType
 import com.kegeltrainer.app.domain.model.SessionRecord
 import com.kegeltrainer.app.domain.model.Workout
 import com.kegeltrainer.app.haptic.HapticCoach
+import com.kegeltrainer.app.sound.SoundCoach
 import com.kegeltrainer.app.voice.TtsCoach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ class WorkoutSessionManager @Inject constructor(
     private val repo: TrainerRepository,
     private val tts: TtsCoach,
     private val haptic: HapticCoach,
+    private val soundCoach: SoundCoach,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -154,7 +156,7 @@ class WorkoutSessionManager @Inject constructor(
                     lastPhaseIndex = snap.phaseIndex
                     lastSpokenSec = -1
                 } else if (shouldCountDown(snap) && snap.remainingSec != lastSpokenSec) {
-                    if (_state.value.settings.voiceEnabled) {
+                    if (_state.value.settings.voiceEnabled && !_state.value.settings.stealthEnabled) {
                         tts.speakCountdown(snap.remainingSec)
                     }
                     lastSpokenSec = snap.remainingSec
@@ -173,7 +175,7 @@ class WorkoutSessionManager @Inject constructor(
     private fun announce(snap: WorkoutEngine.Snapshot) {
         if (snap.isFinished) return
         val settings = _state.value.settings
-        if (settings.voiceEnabled) {
+        if (settings.voiceEnabled && !settings.stealthEnabled) {
             tts.speakPhase(snap.phase.type, snap.phase.durationMs)
         }
         if (settings.hapticEnabled && snap.phase.type != PhaseType.REST) {
@@ -198,6 +200,21 @@ class WorkoutSessionManager @Inject constructor(
                 snapshot = engine?.snapshot(),
                 tip = tip,
             )
+        }
+        val settings = _state.value.settings
+        if (!settings.stealthEnabled) {
+            if (settings.completionSoundEnabled) {
+                soundCoach.playCompletionSound()
+            }
+            if (settings.voiceEnabled) {
+                scope.launch {
+                    delay(350)
+                    tts.speak("训练完成")
+                }
+            }
+        }
+        if (settings.hapticEnabled) {
+            haptic.onComplete()
         }
         scope.launch {
             saveSession(completed = true)

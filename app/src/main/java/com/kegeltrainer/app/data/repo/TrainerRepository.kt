@@ -125,6 +125,7 @@ class TrainerRepository @Inject constructor(
     suspend fun setHaptic(enabled: Boolean) = prefs.setHaptic(enabled)
     suspend fun setStealth(enabled: Boolean) = prefs.setStealth(enabled)
     suspend fun setBackgroundPlay(enabled: Boolean) = prefs.setBackgroundPlay(enabled)
+    suspend fun setCompletionSound(enabled: Boolean) = prefs.setCompletionSound(enabled)
     suspend fun setReminderMinutes(minutes: Set<Int>) {
         prefs.setReminderMinutes(minutes)
         reminderScheduler.reschedule(minutes)

@@ -39,7 +39,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.Scaffold
 import com.kegeltrainer.app.ui.components.AppCard
+import com.kegeltrainer.app.ui.components.AppTopBar
+import com.kegeltrainer.app.ui.components.PrimaryButton
 import com.kegeltrainer.app.ui.components.SelectChip
 import com.kegeltrainer.app.ui.components.ScreenColumn
 import com.kegeltrainer.app.ui.theme.ThemeMode
@@ -257,16 +260,27 @@ private fun SettingRow(label: String, checked: Boolean, onChange: (Boolean) -> U
 
 @Composable
 fun DisclaimerScreen(onBack: () -> Unit) {
-    ScreenColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Text("健康声明", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineLarge)
-        Spacer(Modifier.height(16.dp))
-        DisclaimerBody()
-        Spacer(Modifier.height(16.dp))
-        TextButton(onClick = onBack) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "健康声明",
+                onBack = onBack,
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            DisclaimerBody()
+            Spacer(Modifier.height(28.dp))
+            PrimaryButton(text = "我知道了", onClick = onBack)
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }
 

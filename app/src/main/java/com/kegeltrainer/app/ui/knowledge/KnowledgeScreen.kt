@@ -17,7 +17,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.kegeltrainer.app.domain.knowledge.KnowledgeArticles
 import com.kegeltrainer.app.domain.model.KnowledgeArticle
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Scaffold
 import com.kegeltrainer.app.ui.components.AppCard
+import com.kegeltrainer.app.ui.components.AppTopBar
 import com.kegeltrainer.app.ui.components.ScreenColumn
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,17 +61,26 @@ fun ArticleScreen(
     vm: ArticleViewModel = hiltViewModel(),
 ) {
     val article = vm.article
-    ScreenColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Text(article.title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-        Text(article.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(16.dp))
-        Text(article.body, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(20.dp))
-        TextButton(onClick = onBack) { Text("返回", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = article.title,
+                onBack = onBack,
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            Text(article.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(16.dp))
+            Text(article.body, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }

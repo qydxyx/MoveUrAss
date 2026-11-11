@@ -124,9 +124,9 @@ fun Goal.displayName(): String = when (this) {
 
 fun PhaseType.spokenCue(durationMs: Long = Long.MAX_VALUE): String = when (this) {
     PhaseType.PREPARE -> "准备"
-    PhaseType.CONTRACT -> if (durationMs <= 1_500L) "收" else "收缩"
+    PhaseType.CONTRACT -> "收"
     PhaseType.HOLD -> "保持"
-    PhaseType.RELAX -> if (durationMs <= 1_500L) "放" else "放松"
+    PhaseType.RELAX -> "放"
     PhaseType.REST -> "休息"
 }
 

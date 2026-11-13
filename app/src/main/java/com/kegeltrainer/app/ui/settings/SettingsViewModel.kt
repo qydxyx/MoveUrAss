@@ -10,6 +10,7 @@ import com.kegeltrainer.app.data.repo.TrainerRepository
 import com.kegeltrainer.app.ui.theme.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -64,11 +66,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun exportBackup(context: Context, uri: Uri) {
+        val resolver = context.applicationContext.contentResolver
         viewModelScope.launch {
             try {
-                val jsonString = backupManager.exportJson()
-                context.contentResolver.openOutputStream(uri)?.use { output ->
-                    output.write(jsonString.toByteArray(Charsets.UTF_8))
+                withContext(Dispatchers.IO) {
+                    val jsonString = backupManager.exportJson()
+                    val output = resolver.openOutputStream(uri) ?: error("无法打开所选导出路径")
+                    output.use { it.write(jsonString.toByteArray(Charsets.UTF_8)) }
                 }
                 _messages.emit("备份导出成功")
             } catch (e: Exception) {
@@ -78,13 +82,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun importBackup(context: Context, uri: Uri) {
+        val resolver = context.applicationContext.contentResolver
         viewModelScope.launch {
             try {
-                val jsonString = context.contentResolver.openInputStream(uri)?.use { input ->
-                    input.bufferedReader(Charsets.UTF_8).readText()
-                } ?: error("无法读取所选备份文件")
-
-                val result = backupManager.importJson(jsonString)
+                val result = withContext(Dispatchers.IO) {
+                    val jsonString = resolver.openInputStream(uri)?.use { input ->
+                        input.bufferedReader(Charsets.UTF_8).readText()
+                    } ?: error("无法读取所选备份文件")
+                    backupManager.importJson(jsonString)
+                }
                 if (result.isSuccess) {
                     _messages.emit("备份恢复成功")
                 } else {

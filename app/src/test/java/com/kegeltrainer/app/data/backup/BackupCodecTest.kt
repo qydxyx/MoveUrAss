@@ -92,8 +92,23 @@ class BackupCodecTest {
                 reminderMinutes = emptyList(),
             ),
         )
-        val encoded = json.encodeToString(payload)
-        val decoded = json.decodeFromString<BackupPayload>(encoded)
+        val encoded = BackupCodec.encode(payload)
+        val decoded = BackupCodec.decodeAndValidate(encoded)
         assertTrue(decoded.settings.reminderMinutes.isEmpty())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsEmptyJsonObject() {
+        BackupCodec.decodeAndValidate("{}")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnrelatedJsonObject() {
+        BackupCodec.decodeAndValidate("""{"foo": "bar"}""")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnsupportedVersion() {
+        BackupCodec.decodeAndValidate("""{"version": 99, "exportedAt": 1700000000000}""")
     }
 }

@@ -1,7 +1,9 @@
 package com.kegeltrainer.app.haptic
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.os.Build
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -29,7 +31,7 @@ class HapticCoach @Inject constructor(
             PhaseType.RELAX -> waveform(longArrayOf(0, 160), intArrayOf(0, 80), -1)
             PhaseType.REST -> return
         }
-        runCatching { vibrator?.vibrate(effect) }
+        vibrateEffect(effect)
     }
 
     fun onComplete() {
@@ -38,7 +40,27 @@ class HapticCoach @Inject constructor(
             intArrayOf(0, 180, 0, 220, 0, 255),
             -1,
         )
-        runCatching { vibrator?.vibrate(effect) }
+        vibrateEffect(effect)
+    }
+
+    private fun vibrateEffect(effect: VibrationEffect) {
+        val vib = vibrator ?: return
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val attrs = VibrationAttributes.Builder()
+                    .setUsage(VibrationAttributes.USAGE_MEDIA)
+                    .build()
+                vib.vibrate(effect, attrs)
+            } else {
+                @Suppress("DEPRECATION")
+                val attrs = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                @Suppress("DEPRECATION")
+                vib.vibrate(effect, attrs)
+            }
+        }
     }
 
     private fun oneShot(ms: Long, amplitude: Int): VibrationEffect =

@@ -9,10 +9,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import com.kegeltrainer.app.domain.model.PhaseType
 import com.kegeltrainer.app.domain.model.spokenCue
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,11 +26,16 @@ class TtsCoach @Inject constructor(
     private val main = Handler(Looper.getMainLooper())
     private val pending = AtomicReference<String?>(null)
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    private val utteranceSeq = AtomicLong(0L)
+    private val activeUtteranceId = AtomicReference<String?>(null)
+
+    @Volatile
     private var audioFocusRequest: AudioFocusRequest? = null
 
     @Volatile
     private var ready = false
 
+    @Volatile
     private var tts: TextToSpeech? = null
 
     init {
@@ -46,12 +53,12 @@ class TtsCoach @Inject constructor(
     fun speak(text: String) {
         val engine = tts
         if (ready && engine != null) {
-            requestAudioFocus()
-            engine.speak(text, TextToSpeech.QUEUE_FLUSH, speakParams(), text)
+            speakNow(engine, text)
         } else {
             pending.set(text)
             main.post {
-                if (tts == null) {
+                val current = tts
+                if (current == null) {
                     bindEngine()
                 } else if (ready) {
                     flushPending()
@@ -62,16 +69,27 @@ class TtsCoach @Inject constructor(
 
     fun stop() {
         pending.set(null)
+        activeUtteranceId.set(null)
         tts?.stop()
         abandonAudioFocus()
     }
 
     fun shutdown() {
+        main.removeCallbacksAndMessages(null)
         ready = false
+        pending.set(null)
+        activeUtteranceId.set(null)
         tts?.stop()
         tts?.shutdown()
         tts = null
         abandonAudioFocus()
+    }
+
+    private fun speakNow(engine: TextToSpeech, text: String) {
+        val uttId = "utt_${utteranceSeq.incrementAndGet()}"
+        activeUtteranceId.set(uttId)
+        requestAudioFocus()
+        engine.speak(text, TextToSpeech.QUEUE_FLUSH, speakParams(), uttId)
     }
 
     private fun requestAudioFocus() {
@@ -83,14 +101,13 @@ class TtsCoach @Inject constructor(
                 .build()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (audioFocusRequest == null) {
-                    audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(audioAttrs)
-                        .setAcceptsDelayedFocusGain(true)
-                        .setOnAudioFocusChangeListener { /* maintain focus */ }
-                        .build()
-                }
-                audioFocusRequest?.let { am.requestAudioFocus(it) }
+                val req = audioFocusRequest ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                    .setAudioAttributes(audioAttrs)
+                    .setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener { /* maintain focus */ }
+                    .build()
+                    .also { audioFocusRequest = it }
+                am.requestAudioFocus(req)
             } else {
                 @Suppress("DEPRECATION")
                 am.requestAudioFocus(
@@ -133,6 +150,30 @@ class TtsCoach @Inject constructor(
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build()
         engine.setAudioAttributes(audioAttrs)
+        engine.setOnUtteranceProgressListener(
+            object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) = Unit
+
+                override fun onDone(utteranceId: String?) {
+                    releaseFocusIfCurrent(utteranceId)
+                }
+
+                @Deprecated("Deprecated in Java")
+                override fun onError(utteranceId: String?) {
+                    releaseFocusIfCurrent(utteranceId)
+                }
+
+                override fun onError(utteranceId: String?, errorCode: Int) {
+                    releaseFocusIfCurrent(utteranceId)
+                }
+
+                override fun onStop(utteranceId: String?, interrupted: Boolean) {
+                    if (!interrupted) {
+                        releaseFocusIfCurrent(utteranceId)
+                    }
+                }
+            },
+        )
 
         val locale = preferredLocale(engine)
         if (locale != null) engine.setLanguage(locale)
@@ -142,6 +183,12 @@ class TtsCoach @Inject constructor(
         // Prime the engine; some OEM TTS drops the first utterance.
         engine.speak(" ", TextToSpeech.QUEUE_FLUSH, speakParams(), "warmup")
         main.postDelayed({ flushPending() }, 80)
+    }
+
+    private fun releaseFocusIfCurrent(utteranceId: String?) {
+        if (utteranceId != null && activeUtteranceId.compareAndSet(utteranceId, null)) {
+            abandonAudioFocus()
+        }
     }
 
     private fun preferredLocale(engine: TextToSpeech): Locale? {
@@ -164,8 +211,7 @@ class TtsCoach @Inject constructor(
             pending.compareAndSet(null, text)
             return
         }
-        requestAudioFocus()
-        engine.speak(text, TextToSpeech.QUEUE_FLUSH, speakParams(), text)
+        speakNow(engine, text)
     }
 
     private fun speakParams(): Bundle = Bundle().apply {

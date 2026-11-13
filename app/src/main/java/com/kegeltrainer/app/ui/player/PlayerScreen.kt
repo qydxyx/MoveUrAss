@@ -36,7 +36,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.whenStarted
 import com.kegeltrainer.app.domain.model.PhaseType
 import com.kegeltrainer.app.domain.model.displayLabel
 import com.kegeltrainer.app.domain.model.formatDuration
@@ -64,6 +70,8 @@ fun PlayerScreen(
     val ui by vm.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context as? Activity
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val latestFinished by rememberUpdatedState(ui.finished)
 
     DisposableEffect(ui.stealth) {
         if (ui.stealth) {
@@ -74,18 +82,43 @@ fun PlayerScreen(
         onDispose { activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
     }
 
-    DisposableEffect(Unit) {
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (ui.backgroundPlay) {
-            com.kegeltrainer.app.player.WorkoutForegroundService.start(context)
+    val keepScreenOn = !ui.finished && !ui.snapshot.isPaused
+    DisposableEffect(keepScreenOn) {
+        if (keepScreenOn) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            com.kegeltrainer.app.player.WorkoutForegroundService.stop(context)
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(ui.settingsLoaded, ui.backgroundPlay) {
+        if (ui.settingsLoaded && ui.backgroundPlay && !latestFinished) {
+            com.kegeltrainer.app.player.WorkoutForegroundService.start(context)
+        } else if (ui.settingsLoaded && !ui.backgroundPlay) {
+            com.kegeltrainer.app.player.WorkoutForegroundService.stop(context)
+        }
+        onDispose {
+            if (!latestFinished) {
+                com.kegeltrainer.app.player.WorkoutForegroundService.stop(context)
+            }
+        }
+    }
+
+    var handledExternalExit by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.exitedExternally, lifecycleOwner) {
+        if (ui.exitedExternally && !handledExternalExit) {
+            lifecycleOwner.lifecycle.whenStarted {
+                if (!handledExternalExit) {
+                    handledExternalExit = true
+                    onExit()
+                }
+            }
+        }
+    }
+
     DisposableEffect(lifecycleOwner, ui.backgroundPlay) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) vm.onBackground()
@@ -95,7 +128,7 @@ fun PlayerScreen(
     }
 
     BackHandler {
-        if (ui.finished) onExit() else vm.requestExit()
+        if (ui.finished) vm.leaveFinished(onExit) else vm.requestExit()
     }
     if (ui.finished) {
         CompletePane(ui = ui, onDone = { vm.leaveFinished(onExit) })

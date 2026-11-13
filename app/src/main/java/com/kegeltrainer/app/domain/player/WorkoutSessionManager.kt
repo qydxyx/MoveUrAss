@@ -29,6 +29,7 @@ data class SessionState(
     val isPlan: Boolean = false,
     val snapshot: WorkoutEngine.Snapshot? = null,
     val settings: AppSettings = AppSettings(),
+    val settingsLoaded: Boolean = false,
     val isFinished: Boolean = false,
     val recorded: Boolean = false,
     val tip: String = "",
@@ -46,8 +47,13 @@ class WorkoutSessionManager @Inject constructor(
     private val _state = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = _state.asStateFlow()
 
+    private val isPausedFlow = MutableStateFlow(false)
+
+    @Volatile
     private var engine: WorkoutEngine? = null
+    private var startJob: Job? = null
     private var ticker: Job? = null
+    private var finishVoiceJob: Job? = null
     private var startedAtMs: Long = 0L
     private var lastPhaseIndex: Int = -1
     private var lastSpokenSec: Int = -1
@@ -55,37 +61,50 @@ class WorkoutSessionManager @Inject constructor(
     init {
         scope.launch {
             repo.settings.collect { newSettings ->
-                _state.update { it.copy(settings = newSettings) }
+                _state.update { it.copy(settings = newSettings, settingsLoaded = true) }
             }
         }
     }
 
     fun startSession(workout: Workout, isPlan: Boolean) {
         val current = _state.value
-        if (current.workout?.id == workout.id && !current.isFinished && engine != null) {
+        if (current.workout?.id == workout.id && !current.isFinished && (engine != null || startJob?.isActive == true)) {
             return
         }
+        startJob?.cancel()
         ticker?.cancel()
         ticker = null
+        finishVoiceJob?.cancel()
+        finishVoiceJob = null
         tts.stop()
+        engine = null
+        isPausedFlow.value = false
 
-        val newEngine = WorkoutEngine(workout) { SystemClock.elapsedRealtime() }
-        engine = newEngine
-        startedAtMs = System.currentTimeMillis()
-        lastPhaseIndex = -1
-        lastSpokenSec = -1
+        startJob = scope.launch {
+            val initialSettings = if (_state.value.settingsLoaded) {
+                _state.value.settings
+            } else {
+                repo.settings.first()
+            }
+            val newEngine = WorkoutEngine(workout) { SystemClock.elapsedRealtime() }
+            engine = newEngine
+            startedAtMs = System.currentTimeMillis()
+            lastPhaseIndex = -1
+            lastSpokenSec = -1
+            isPausedFlow.value = false
 
-        val currentSettings = _state.value.settings
-        _state.value = SessionState(
-            workout = workout,
-            isPlan = isPlan,
-            snapshot = newEngine.snapshot(),
-            settings = currentSettings,
-            isFinished = false,
-            recorded = false,
-            tip = "",
-        )
-        startTicker()
+            _state.value = SessionState(
+                workout = workout,
+                isPlan = isPlan,
+                snapshot = newEngine.snapshot(),
+                settings = initialSettings,
+                settingsLoaded = true,
+                isFinished = false,
+                recorded = false,
+                tip = "",
+            )
+            startTicker()
+        }
     }
 
     fun pauseOrResume() {
@@ -94,8 +113,10 @@ class WorkoutSessionManager @Inject constructor(
         if (current.isFinished) return
         if (current.isPaused) {
             eng.resume()
+            isPausedFlow.value = false
         } else {
             eng.pause()
+            isPausedFlow.value = true
             tts.stop()
         }
         publish()
@@ -105,6 +126,7 @@ class WorkoutSessionManager @Inject constructor(
         val eng = engine ?: return
         if (!eng.snapshot().isPaused && !eng.snapshot().isFinished) {
             eng.pause()
+            isPausedFlow.value = true
             tts.stop()
             publish()
         }
@@ -114,16 +136,26 @@ class WorkoutSessionManager @Inject constructor(
         val eng = engine ?: return
         if (eng.snapshot().isPaused && !eng.snapshot().isFinished) {
             eng.resume()
+            isPausedFlow.value = false
             publish()
         }
     }
 
     fun stopSession() {
+        startJob?.cancel()
+        startJob = null
         ticker?.cancel()
         ticker = null
+        finishVoiceJob?.cancel()
+        finishVoiceJob = null
+        isPausedFlow.value = false
         tts.stop()
         engine = null
-        _state.value = SessionState(settings = _state.value.settings)
+        val current = _state.value
+        _state.value = SessionState(
+            settings = current.settings,
+            settingsLoaded = current.settingsLoaded,
+        )
     }
 
     suspend fun saveSession(completed: Boolean) {
@@ -151,6 +183,11 @@ class WorkoutSessionManager @Inject constructor(
             while (true) {
                 val eng = engine ?: break
                 val snap = eng.snapshot()
+                if (snap.isPaused && !snap.isFinished) {
+                    publish()
+                    isPausedFlow.first { !it }
+                    continue
+                }
                 if (snap.phaseIndex != lastPhaseIndex) {
                     announce(snap)
                     lastPhaseIndex = snap.phaseIndex
@@ -191,6 +228,7 @@ class WorkoutSessionManager @Inject constructor(
 
     private fun finish() {
         ticker?.cancel()
+        isPausedFlow.value = false
         val workout = _state.value.workout ?: return
         val tip = workout.coachTips.randomOrNull()
             ?: KnowledgeArticles.rotatingTips.random()
@@ -207,8 +245,10 @@ class WorkoutSessionManager @Inject constructor(
                 soundCoach.playCompletionSound()
             }
             if (settings.voiceEnabled) {
-                scope.launch {
-                    delay(350)
+                val voiceDelayMs = if (settings.completionSoundEnabled) 700L else 100L
+                finishVoiceJob?.cancel()
+                finishVoiceJob = scope.launch {
+                    delay(voiceDelayMs)
                     tts.speak("训练完成")
                 }
             }

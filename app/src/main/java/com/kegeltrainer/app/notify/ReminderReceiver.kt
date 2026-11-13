@@ -15,12 +15,15 @@ import com.kegeltrainer.app.R
 import com.kegeltrainer.app.data.prefs.UserPrefs
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ReminderReceiver : BroadcastReceiver() {
     @Inject lateinit var scheduler: ReminderScheduler
+    @Inject lateinit var prefs: UserPrefs
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION) return
@@ -29,9 +32,22 @@ class ReminderReceiver : BroadcastReceiver() {
             intent.hasExtra(EXTRA_HOUR) -> intent.getIntExtra(EXTRA_HOUR, -1) * 60
             else -> -1
         }
-        showNotification(context)
-        if (minuteOfDay in 0..1439) {
-            scheduler.scheduleNext(minuteOfDay)
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val reminderMinutes = prefs.settings.first().reminderMinutes
+                val shouldNotify = reminderMinutes.isNotEmpty() &&
+                    (minuteOfDay < 0 || minuteOfDay in reminderMinutes)
+                if (shouldNotify) {
+                    showNotification(context)
+                }
+                scheduler.reschedule(
+                    minutesOfDay = reminderMinutes,
+                    justFiredMinute = minuteOfDay.takeIf { it in 0..1439 },
+                )
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 

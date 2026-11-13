@@ -1,5 +1,6 @@
 package com.kegeltrainer.app.player
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,12 +8,14 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.kegeltrainer.app.MainActivity
 import com.kegeltrainer.app.R
 import com.kegeltrainer.app.domain.model.displayLabel
@@ -37,6 +40,8 @@ class WorkoutForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeLock: PowerManager.WakeLock? = null
     private var observerJob: Job? = null
+    private var stopDelayJob: Job? = null
+    private var completionHandled = false
     private var lastNotificationKey: String? = null
 
     override fun onCreate() {
@@ -58,6 +63,8 @@ class WorkoutForegroundService : Service() {
         when (intent?.action) {
             ACTION_PAUSE_RESUME -> sessionManager.pauseOrResume()
             ACTION_STOP -> {
+                stopDelayJob?.cancel()
+                stopDelayJob = null
                 scope.launch {
                     sessionManager.saveSession(completed = false)
                     sessionManager.stopSession()
@@ -72,6 +79,8 @@ class WorkoutForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopDelayJob?.cancel()
+        stopDelayJob = null
         observerJob?.cancel()
         scope.cancel()
         releaseWakeLock()
@@ -98,13 +107,17 @@ class WorkoutForegroundService : Service() {
                 val workout = state.workout
 
                 if (state.isFinished) {
-                    if (workout != null) {
-                        showCompletionNotification(workout.title, state.settings.stealthEnabled)
-                    }
-                    // Keep wakeLock alive briefly for 3s so the completion chime and TTS voice finish playing in screen-off
-                    scope.launch {
-                        delay(3000)
-                        stopSelf()
+                    if (!completionHandled) {
+                        completionHandled = true
+                        if (workout != null) {
+                            showCompletionNotification(workout.title, state.settings.stealthEnabled)
+                        }
+                        // Keep wakeLock alive briefly for 3s so the completion chime and TTS voice finish playing in screen-off
+                        stopDelayJob?.cancel()
+                        stopDelayJob = scope.launch {
+                            delay(3000)
+                            stopSelf()
+                        }
                     }
                     return@collectLatest
                 }
@@ -113,6 +126,10 @@ class WorkoutForegroundService : Service() {
                     // Session starting up or idle, do not stopSelf!
                     return@collectLatest
                 }
+
+                completionHandled = false
+                stopDelayJob?.cancel()
+                stopDelayJob = null
 
                 val title = getString(R.string.app_name)
                 val content = if (state.settings.stealthEnabled) {
@@ -187,6 +204,12 @@ class WorkoutForegroundService : Service() {
     }
 
     private fun showCompletionNotification(workoutTitle: String, isStealth: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val openAppIntent = PendingIntent.getActivity(
             this,
             0,

@@ -4,21 +4,13 @@ import android.os.SystemClock
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kegeltrainer.app.data.prefs.AppSettings
 import com.kegeltrainer.app.data.repo.TrainerRepository
 import com.kegeltrainer.app.domain.catalog.WorkoutCatalog
-import com.kegeltrainer.app.domain.knowledge.KnowledgeArticles
-import com.kegeltrainer.app.domain.model.PhaseType
-import com.kegeltrainer.app.domain.model.SessionRecord
 import com.kegeltrainer.app.domain.model.Workout
 import com.kegeltrainer.app.domain.player.WorkoutEngine
 import com.kegeltrainer.app.domain.player.WorkoutSessionManager
-import com.kegeltrainer.app.haptic.HapticCoach
-import com.kegeltrainer.app.voice.TtsCoach
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -31,8 +23,10 @@ data class PlayerUi(
     val haptic: Boolean,
     val stealth: Boolean,
     val backgroundPlay: Boolean = true,
+    val settingsLoaded: Boolean = false,
     val confirmExit: Boolean = false,
     val finished: Boolean = false,
+    val exitedExternally: Boolean = false,
     val tip: String = "",
     val recorded: Boolean = false,
 )
@@ -46,6 +40,9 @@ class PlayerViewModel @Inject constructor(
     private val workoutId: String = checkNotNull(savedStateHandle["workoutId"])
     private val isPlan: Boolean = savedStateHandle["plan"] ?: false
     val workout: Workout = WorkoutCatalog.byId(workoutId)
+
+    private var sessionObservedActive = false
+    private var exitingLocally = false
 
     private val _ui = MutableStateFlow(
         PlayerUi(
@@ -63,18 +60,35 @@ class PlayerViewModel @Inject constructor(
         sessionManager.startSession(workout, isPlan)
         viewModelScope.launch {
             sessionManager.state.collect { state ->
-                val snap = state.snapshot ?: return@collect
-                _ui.update {
-                    it.copy(
-                        snapshot = snap,
-                        voice = state.settings.voiceEnabled,
-                        haptic = state.settings.hapticEnabled,
-                        stealth = state.settings.stealthEnabled,
-                        backgroundPlay = state.settings.backgroundPlayEnabled,
-                        finished = state.isFinished,
-                        tip = state.tip,
-                        recorded = state.recorded,
-                    )
+                val snap = state.snapshot
+                val activeWorkout = state.workout
+                if (activeWorkout?.id == workoutId && snap != null) {
+                    sessionObservedActive = true
+                    _ui.update {
+                        it.copy(
+                            snapshot = snap,
+                            voice = state.settings.voiceEnabled,
+                            haptic = state.settings.hapticEnabled,
+                            stealth = state.settings.stealthEnabled,
+                            backgroundPlay = state.settings.backgroundPlayEnabled,
+                            settingsLoaded = state.settingsLoaded,
+                            finished = state.isFinished,
+                            tip = state.tip,
+                            recorded = state.recorded,
+                        )
+                    }
+                } else if (sessionObservedActive && !exitingLocally && activeWorkout == null && !state.isFinished) {
+                    _ui.update { it.copy(exitedExternally = true) }
+                } else if (!sessionObservedActive) {
+                    _ui.update {
+                        it.copy(
+                            voice = state.settings.voiceEnabled,
+                            haptic = state.settings.hapticEnabled,
+                            stealth = state.settings.stealthEnabled,
+                            backgroundPlay = state.settings.backgroundPlayEnabled,
+                            settingsLoaded = state.settingsLoaded,
+                        )
+                    }
                 }
             }
         }
@@ -108,6 +122,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun confirmExit(onDone: () -> Unit) {
+        exitingLocally = true
         viewModelScope.launch {
             sessionManager.saveSession(completed = false)
             sessionManager.stopSession()
@@ -116,6 +131,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun leaveFinished(onDone: () -> Unit) {
+        exitingLocally = true
         sessionManager.stopSession()
         onDone()
     }

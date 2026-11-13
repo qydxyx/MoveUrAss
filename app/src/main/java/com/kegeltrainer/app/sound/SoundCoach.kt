@@ -2,6 +2,7 @@ package com.kegeltrainer.app.sound
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
@@ -11,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +25,10 @@ class SoundCoach @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+
+    @Volatile
+    private var audioFocusRequest: AudioFocusRequest? = null
 
     // Pre-synthesized completion sound buffer (E5 659Hz -> A5 880Hz chime with harmonics and decay)
     private val completionSoundPcm: ShortArray by lazy {
@@ -31,10 +37,51 @@ class SoundCoach @Inject constructor(
 
     fun playCompletionSound() {
         scope.launch {
+            requestAudioFocus()
             val played = runCatching { playPcm(completionSoundPcm) }.getOrDefault(false)
             if (!played) {
                 // Fallback to system notification sound if AudioTrack playback fails
                 playSystemNotificationSound()
+            }
+            delay(750)
+            abandonAudioFocus()
+        }
+    }
+
+    private fun requestAudioFocus() {
+        runCatching {
+            val am = audioManager ?: return
+            val attributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val req = audioFocusRequest ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                    .setAudioAttributes(attributes)
+                    .setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener { }
+                    .build()
+                    .also { audioFocusRequest = it }
+                am.requestAudioFocus(req)
+            } else {
+                @Suppress("DEPRECATION")
+                am.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
+                )
+            }
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        runCatching {
+            val am = audioManager ?: return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                am.abandonAudioFocus(null)
             }
         }
     }
@@ -84,7 +131,7 @@ class SoundCoach @Inject constructor(
             // Clean up track after playback finishes
             track?.let { trk ->
                 scope.launch {
-                    kotlinx.coroutines.delay(1000)
+                    delay(1000)
                     runCatching {
                         trk.stop()
                         trk.release()

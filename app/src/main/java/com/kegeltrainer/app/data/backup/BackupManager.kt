@@ -7,18 +7,16 @@ import com.kegeltrainer.app.data.db.ProfileEntity
 import com.kegeltrainer.app.data.db.SessionEntity
 import com.kegeltrainer.app.data.prefs.AppSettings
 import com.kegeltrainer.app.data.prefs.UserPrefs
-import com.kegeltrainer.app.domain.model.AgeRange
-import com.kegeltrainer.app.domain.model.DailyBudget
-import com.kegeltrainer.app.domain.model.Experience
-import com.kegeltrainer.app.domain.model.Goal
-import com.kegeltrainer.app.domain.model.PlannedDay
-import com.kegeltrainer.app.domain.model.SessionRecord
-import com.kegeltrainer.app.domain.model.UserProfile
+import com.kegeltrainer.app.notify.ReminderScheduler
 import com.kegeltrainer.app.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -73,17 +71,44 @@ data class BackupSettings(
     val themeMode: String = "SYSTEM",
 )
 
-@Singleton
-class BackupManager @Inject constructor(
-    private val db: AppDatabase,
-    private val prefs: UserPrefs,
-) {
+object BackupCodec {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
         prettyPrint = true
     }
 
+    fun encode(payload: BackupPayload): String = json.encodeToString(payload)
+
+    fun decodeAndValidate(jsonContent: String): BackupPayload {
+        val root = runCatching { json.parseToJsonElement(jsonContent) }.getOrNull()
+            ?: throw IllegalArgumentException("无法解析 JSON 文件")
+        if (root !is JsonObject) {
+            throw IllegalArgumentException("无效的备份文件格式")
+        }
+
+        val version = root["version"]?.jsonPrimitive?.intOrNull
+            ?: throw IllegalArgumentException("备份文件缺少有效的版本信息")
+        if (version != 1) {
+            throw IllegalArgumentException("不支持的备份版本: $version")
+        }
+
+        val hasExportedAt = root["exportedAt"]?.jsonPrimitive?.longOrNull?.let { it > 0L } == true
+        val hasPayloadData = listOf("profile", "planDays", "sessions", "settings").any { it in root }
+        if (!hasExportedAt && !hasPayloadData) {
+            throw IllegalArgumentException("备份文件内容不完整")
+        }
+
+        return json.decodeFromString<BackupPayload>(jsonContent)
+    }
+}
+
+@Singleton
+class BackupManager @Inject constructor(
+    private val db: AppDatabase,
+    private val prefs: UserPrefs,
+    private val reminderScheduler: ReminderScheduler,
+) {
     suspend fun exportJson(): String {
         val profile = db.profileDao().get()?.toBackup()
         val planDays = db.planDao().getAll().map { it.toBackup() }
@@ -98,11 +123,11 @@ class BackupManager @Inject constructor(
             sessions = sessions,
             settings = settings,
         )
-        return json.encodeToString(payload)
+        return BackupCodec.encode(payload)
     }
 
     suspend fun importJson(jsonContent: String): Result<Unit> = runCatching {
-        val payload = json.decodeFromString<BackupPayload>(jsonContent)
+        val payload = BackupCodec.decodeAndValidate(jsonContent)
 
         db.withTransaction {
             db.profileDao().clear()
@@ -121,6 +146,8 @@ class BackupManager @Inject constructor(
             }
         }
 
+        val validReminders = payload.settings.reminderMinutes.filter { it in 0..1439 }.toSet()
+
         // Restore user preferences
         prefs.setOnboarded(payload.profile != null)
         prefs.setVoice(payload.settings.voiceEnabled)
@@ -128,9 +155,11 @@ class BackupManager @Inject constructor(
         prefs.setHaptic(payload.settings.hapticEnabled)
         prefs.setStealth(payload.settings.stealthEnabled)
         prefs.setBackgroundPlay(payload.settings.backgroundPlayEnabled)
-        prefs.setReminderMinutes(payload.settings.reminderMinutes.toSet())
+        prefs.setReminderMinutes(validReminders)
         val themeMode = runCatching { ThemeMode.valueOf(payload.settings.themeMode) }.getOrDefault(ThemeMode.SYSTEM)
         prefs.setThemeMode(themeMode)
+
+        reminderScheduler.reschedule(validReminders)
     }
 }
 
